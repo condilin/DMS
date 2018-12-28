@@ -46,10 +46,8 @@ class UploadFile(APIView):
 
         # 自定义列名
         # 重新定义表中字段的列名, 因为插入数据库时，时按表中的字段对应一一插入到数据库中的，因此列名要与数据库中保持一致
-        # column_name = ['pathology', 'diagnosis_label_doctor', 'waveplate_source', 'production_date',
-        #                'entry_date', 'last_menstruation', 'clinical_observed', 'diagnose_result_doctor']
-        column_name = ['pathology', 'age', 'last_menstruation', 'review_time', 'sampling_time',
-                       'diagnose_result_doctor', 'diagnosis_label_doctor', 'what_time']
+        column_name = ['pathology', 'diagnosis_label_doctor', 'waveplate_source', 'check_date', 'diagnosis_date',
+                       'last_menstruation', 'clinical_observed', 'entry_date']
         data.columns = column_name
 
         # 保存到数据库前，手动添加is_delete列与时间列
