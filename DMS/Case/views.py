@@ -25,7 +25,7 @@ class UploadFile(APIView):
         _file = request.FILES.get('file', None)
         # 如果获取不到内容, 则说明上传失败
         if not _file:
-            return Response({"msg": '文件上传失败！'})
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"msg": '文件上传失败！'})
 
         # ---------- 保存上传文件 ---------- #
 
@@ -34,7 +34,7 @@ class UploadFile(APIView):
         if suffix_name in ['.csv', '.xls', '.xlsx']:
             upload_file_rename = save_upload_file(_file)
         else:
-            return Response({"msg": '请上传csv或excel格式的文件！'})
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"msg": '请上传csv或excel格式的文件！'})
 
         # ---------- 读取上传文件数据 ---------- #
         # excel格式
@@ -59,22 +59,22 @@ class UploadFile(APIView):
 
         # ----------- 保存结果到数据库 ----------- #
 
-        # try:
-        # 将数据写入mysql的数据库，但需要先通过sqlalchemy.create_engine建立连接,且字符编码设置为utf8，否则有些latin字符不能处理
-        con = create_engine('mysql+mysqldb://root:kyfq@localhost:3306/dms?charset=utf8')
-        # chunksize:
-        # 如果data的数据量太大，数据库无法响应可能会报错，这时候就可以设置chunksize，比如chunksize = 1000，data就会一次1000的循环写入数据库。
-        # if_exists:
-        # 如果表中有数据，则追加
-        # index:
-        # index=False，则不将dataframe中的index列保存到数据库
-        data.to_sql('tb_case_info', con, if_exists='append', index=False, chunksize=1000)
-        # except Exception as e:
-        #     return Response({"msg": '导入数据库失败！'})
+        try:
+            # 将数据写入mysql的数据库，但需要先通过sqlalchemy.create_engine建立连接,且字符编码设置为utf8，否则有些latin字符不能处理
+            con = create_engine('mysql+mysqldb://root:kyfq@localhost:3306/dms?charset=utf8')
+            # chunksize:
+            # 如果data的数据量太大，数据库无法响应可能会报错，这时候就可以设置chunksize，比如chunksize = 1000，data就会一次1000的循环写入数据库。
+            # if_exists:
+            # 如果表中有数据，则追加
+            # index:
+            # index=False，则不将dataframe中的index列保存到数据库
+            data.to_sql('tb_case_info', con, if_exists='append', index=False, chunksize=1000)
+        except Exception as e:
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data={"msg": '导入数据库失败！'})
 
         # 写入image表后，再同步写入更名记录表以及朱博士诊断表????
         # 导入数据库后，对病理号进行去重？？？？
-        return Response({"msg": '上传成功！', "status_code": status.HTTP_201_CREATED})
+        return Response(status=status.HTTP_201_CREATED, data={"msg": '上传成功！'})
 
 
 class FindDuplicateFileName(APIView):
@@ -91,7 +91,7 @@ class FindDuplicateFileName(APIView):
         result_dict = {
             "dup_file_name": dup_file_name_list
         }
-        return Response({"status_code": status.HTTP_200_OK, "data": result_dict})
+        return Response(status=status.HTTP_200_OK, data=result_dict)
 
 
 class SCCaseView(ListCreateAPIView):
@@ -121,7 +121,7 @@ class SUDCaseView(APIView):
         try:
             case = Case.objects.get(id=pk, is_delete=False)
         except Case.DoesNotExist:
-            return Response({"status_code": status.HTTP_404_NOT_FOUND})
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
         # 序列化返回
         serializer = CaseSerializer(case)
@@ -132,10 +132,10 @@ class SUDCaseView(APIView):
         try:
             case = Case.objects.get(id=pk, is_delete=False)
         except Case.DoesNotExist:
-            return Response({"status_code": status.HTTP_404_NOT_FOUND})
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
         # 逻辑删除, .save方法适合于单条记录的保存, 而.update方法适用于批量数据的保存
         case.is_delete = True
         case.save()
 
-        return Response({"status_code": status.HTTP_204_NO_CONTENT})
+        return Response(status=status.HTTP_204_NO_CONTENT)

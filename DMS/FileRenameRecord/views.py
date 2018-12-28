@@ -26,7 +26,7 @@ class UploadFile(APIView):
         _file = request.FILES.get('file', None)
         # 如果获取不到内容, 则说明上传失败
         if not _file:
-            return Response({"msg": '文件上传失败！'})
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"msg": '文件上传失败！'})
 
         # ---------- 保存上传文件 ---------- #
 
@@ -35,7 +35,7 @@ class UploadFile(APIView):
         if suffix_name in ['.csv', '.xls', '.xlsx']:
             upload_file_rename = save_upload_file(_file)
         else:
-            return Response({"msg": '请上传csv或excel格式的文件！'})
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"msg": '请上传csv或excel格式的文件！'})
 
         # ---------- 读取上传文件数据 ---------- #
         # excel格式
@@ -71,9 +71,9 @@ class UploadFile(APIView):
             # index=False，则不将dataframe中的index列保存到数据库
             data.to_sql('tb_rename', con, if_exists='append', index=False, chunksize=1000)
         except Exception as e:
-            return Response({"msg": '导入数据库失败！'})
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data={"msg": '导入数据库失败！'})
 
-        return Response({"msg": '上传成功！', "status_code": status.HTTP_201_CREATED})
+        return Response(status=status.HTTP_201_CREATED, data={"msg": '上传成功！'})
 
 
 class FindDuplicateFileName(APIView):
@@ -90,7 +90,7 @@ class FindDuplicateFileName(APIView):
         result_dict = {
             "dup_file_name": dup_file_name_list
         }
-        return Response({"status_code": status.HTTP_200_OK, "data": result_dict})
+        return Response(status=status.HTTP_200_OK, data=result_dict)
 
 
 class SCRenameView(ListCreateAPIView):
@@ -120,7 +120,7 @@ class SUDRenameView(APIView):
         try:
             image = FileRenameRecord.objects.get(id=pk, is_delete=False)
         except FileRenameRecord.DoesNotExist:
-            return Response({"status_code": status.HTTP_404_NOT_FOUND})
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
         # 序列化返回
         serializer = RenameSerializer(image)
@@ -131,7 +131,7 @@ class SUDRenameView(APIView):
         try:
             image = FileRenameRecord.objects.get(id=pk, is_delete=False)
         except FileRenameRecord.DoesNotExist:
-            return Response({"status_code": status.HTTP_404_NOT_FOUND})
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
         # 获取参数, 校验参数, 保存结果
         serializer = RenameSerializer(image, data=request.data)
@@ -153,10 +153,10 @@ class SUDRenameView(APIView):
         try:
             image = FileRenameRecord.objects.get(id=pk, is_delete=False)
         except FileRenameRecord.DoesNotExist:
-            return Response({"status_code": status.HTTP_404_NOT_FOUND})
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
         # 逻辑删除, .save方法适合于单条记录的保存, 而.update方法适用于批量数据的保存
         image.is_delete = True
         image.save()
 
-        return Response({"status_code": status.HTTP_204_NO_CONTENT})
+        return Response(status=status.HTTP_204_NO_CONTENT)

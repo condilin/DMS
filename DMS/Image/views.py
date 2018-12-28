@@ -28,7 +28,7 @@ class UploadFile(APIView):
         _file = request.FILES.get('file', None)
         # 如果获取不到内容, 则说明上传失败
         if not _file:
-            return Response({"msg": '文件上传失败！'})
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"msg": '文件上传失败！'})
 
         # ---------- 保存上传文件 ---------- #
 
@@ -37,7 +37,7 @@ class UploadFile(APIView):
         if suffix_name in ['.csv', '.xls', '.xlsx']:
             upload_file_rename = save_upload_file(_file)
         else:
-            return Response({"msg": '请上传csv或excel格式的文件！'})
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"msg": '请上传csv或excel格式的文件！'})
 
         # ---------- 读取上传文件数据 ---------- #
         # excel格式
@@ -71,9 +71,9 @@ class UploadFile(APIView):
             # index=False，则不将dataframe中的index列保存到数据库
             data.to_sql('tb_big_image_info', con, if_exists='append', index=False, chunksize=1000)
         except Exception as e:
-            return Response({"msg": '导入数据库失败！'})
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data={"msg": '导入数据库失败！'})
 
-        return Response({"msg": '上传成功！', "status_code": status.HTTP_201_CREATED})
+        return Response(status=status.HTTP_201_CREATED, data={"msg": '上传成功！'})
 
 
 class StatisticView(APIView):
@@ -97,7 +97,7 @@ class StatisticView(APIView):
             'image_count': image_count,
             'resolution_count': resolution_count_list
         }
-        return Response({"status_code": status.HTTP_200_OK, "data": result_dict})
+        return Response(status=status.HTTP_200_OK, data=result_dict)
 
 
 class FindDuplicateFileName(APIView):
@@ -114,7 +114,7 @@ class FindDuplicateFileName(APIView):
         result_dict = {
             "dup_file_name": dup_file_name_list
         }
-        return Response({"status_code": status.HTTP_200_OK, "data": result_dict})
+        return Response(status=status.HTTP_200_OK, data=result_dict)
 
 
 class SCImageView(ListCreateAPIView):
@@ -144,7 +144,7 @@ class SUDImageView(APIView):
         try:
             image = Image.objects.get(id=pk, is_delete=False)
         except Image.DoesNotExist:
-            return Response({"status_code": status.HTTP_404_NOT_FOUND})
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
         # 序列化返回
         serializer = ImageSerializer(image)
@@ -155,7 +155,7 @@ class SUDImageView(APIView):
         try:
             image = Image.objects.get(id=pk, is_delete=False)
         except Image.DoesNotExist:
-            return Response({"status_code": status.HTTP_404_NOT_FOUND})
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
         # 获取参数, 校验参数, 保存结果
         serializer = ImageSerializer(image, data=request.data)
@@ -177,7 +177,7 @@ class SUDImageView(APIView):
         try:
             image = Image.objects.get(id=pk, is_delete=False)
         except Image.DoesNotExist:
-            return Response({"status_code": status.HTTP_404_NOT_FOUND})
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
         # 在data_samba中将该大图移动到临时的文件(新建一个作为垃圾桶)
         # image_full_path = os.path.join(settings.DATA_SAMBA_PREX, image.storage_path)
@@ -188,4 +188,4 @@ class SUDImageView(APIView):
         image.is_delete = True
         image.save()
 
-        return Response({"status_code": status.HTTP_204_NO_CONTENT})
+        return Response(status=status.HTTP_204_NO_CONTENT)
