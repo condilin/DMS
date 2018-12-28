@@ -16,7 +16,7 @@ class ImageTestCase(TestCase):
         self.image = {
             "file_name": "TC10001_2018_05_09",
             "resolution": "20x",
-            "waveplate_source": "huayin"
+            "waveplate_source": "南方医院"
         }
 
         # 发送post请求, 增加一条数据, 并获取id值
@@ -26,6 +26,8 @@ class ImageTestCase(TestCase):
         else:
             print(response.json())
 
+        print('Image接口测试 =========>')
+
     def test_image_get(self):
         response = self.client.get("/api/v1/images/")
         self.assertEqual(response.status_code, 200)
@@ -33,7 +35,11 @@ class ImageTestCase(TestCase):
 
         response = self.client.get('/api/v1/images/{}/'.format(self.image_id))
         self.assertEqual(response.status_code, 200)
-        print('2.get方法查询一条数据, 返回的状态码为：%s\n' % response.status_code)
+        print('2.get方法查询一条数据, 返回的状态码为：%s' % response.status_code)
+
+        response = self.client.get('/api/v1/images/statistics/')
+        self.assertEqual(response.status_code, 200)
+        print('3.get方法查询首页统计信息, 返回的状态码为：%s\n' % response.status_code)
 
     def test_image_post(self):
         # 插入数据
