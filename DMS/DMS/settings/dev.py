@@ -71,6 +71,7 @@ INSTALLED_APPS = [
 
     # 第三方应用
     'rest_framework',
+    'django_filters',
     'rest_framework_swagger',
 
     # 自己的应用
@@ -97,7 +98,7 @@ ROOT_URLCONF = 'DMS.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')]
+        'DIRS': [os.path.join(BASE_DIR, '../templates')]
         ,
         'APP_DIRS': True,
         'OPTIONS': {
@@ -126,8 +127,6 @@ DATABASES = {
         # 'HOST': '192.168.2.179',
         'HOST': 'localhost',
         'PORT': 3306,
-        # 'OPTIONS': {
-        #     'init_command': 'SET default_storage_engine=INNODB,character_set_connection=utf8,collation_connection=utf8_unicode_ci;'}
     }
 }
 
@@ -184,3 +183,46 @@ REST_FRAMEWORK = {
 # 移动大图到垃圾文件夹的目录
 # DATA_SAMBA_PREX = '/run/user/1000/gvfs/smb-share:server=192.168.2.221,share=data_samba/'
 # TRASH_FILE_PATH = 'TMP'
+
+
+# ------------------------------ 配置日志 ------------------------------ #
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,  # 是否禁用已经存在的日志器
+    'formatters': {  # 日志信息显示的格式
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(lineno)d %(message)s'
+        },
+        'simple': {
+            'format': '%(levelname)s %(module)s %(lineno)d %(message)s'
+        },
+    },
+    'filters': {  # 对日志进行过滤
+        'require_debug_true': {  # django在debug模式下才输出日志
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
+    'handlers': {  # 日志处理方法
+        'console': {  # 向终端中输出日志
+            'level': 'INFO',
+            'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        'file': {  # 向文件中输出日志
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, "logs/dms.log"),  # 日志文件的位置
+            'maxBytes': 300 * 1024 * 1024,
+            'backupCount': 10,
+            'formatter': 'verbose'
+        },
+    },
+    'loggers': {  # 日志器
+        'django': {  # 定义了一个名为django的日志器
+            'handlers': ['console', 'file'],  # 可以同时向终端与文件中输出日志
+            'propagate': True,  # 是否继续传递日志信息
+            'level': 'INFO',  # 日志器接收的最低日志级别
+        },
+    }
+}
