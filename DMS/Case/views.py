@@ -46,8 +46,8 @@ class UploadFile(APIView):
 
         # 自定义列名
         # 重新定义表中字段的列名, 因为插入数据库时，时按表中的字段对应一一插入到数据库中的，因此列名要与数据库中保持一致
-        column_name = ['pathology', 'diagnosis_label_doctor', 'waveplate_source', 'check_date', 'diagnosis_date',
-                       'last_menstruation', 'clinical_observed', 'entry_date']
+        column_name = ['pathology', 'diagnosis_label_doctor', 'waveplate_source', 'making_way', 'check_date',
+                       'diagnosis_date', 'last_menstruation', 'clinical_observed', 'entry_date']
         data.columns = column_name
 
         # 保存到数据库前，手动添加is_delete列与时间列
@@ -76,10 +76,10 @@ class UploadFile(APIView):
 
 
 class FindDuplicateFileName(APIView):
-    """查找病例中出现重复的文件名"""
+    """查找病例中出现重复的病理号"""
 
     def get(self, request):
-        # 查询文件名/病理号出现的次数大于1的记录
+        # 查询病理号出现的次数大于1的记录
         dup_file_name = Case.objects.filter(is_delete=False).values('pathology').annotate(
             dup_count=Count('pathology')).filter(dup_count__gt=1)
         # 转换成列表

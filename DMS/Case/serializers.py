@@ -13,7 +13,6 @@ class CaseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Case
-        # fields = ('id', 'pathology', 'diagnosis_label_doctor', 'waveplate_source',
-        #           'production_date', 'entry_date', 'last_menstruation', 'clinical_observed',
-        #           'diagnose_result_doctor')
-        fields = '__all__'
+        fields = ('id', 'pathology', 'diagnosis_label_doctor', 'waveplate_source',
+                  'making_way', 'check_date', 'diagnosis_date', 'last_menstruation',
+                  'clinical_observed')

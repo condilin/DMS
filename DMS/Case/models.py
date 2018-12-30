@@ -8,15 +8,15 @@ class Case(models.Model):
     pathology = models.CharField(max_length=128, verbose_name=u'病理号', null=True, blank=True)
     diagnosis_label_doctor = models.CharField(max_length=64, verbose_name=u'医生诊断标签', null=True, blank=True)
     waveplate_source = models.CharField(max_length=64, verbose_name=u'片源', null=True, blank=True)
+    making_way = models.CharField(max_length=64, verbose_name=u'切片制式', null=True, blank=True)
     check_date = models.DateTimeField(verbose_name=u'采样/检查时间', blank=True, null=True)
     diagnosis_date = models.DateTimeField(verbose_name=u"诊断时间", blank=True, null=True)
     last_menstruation = models.DateTimeField(verbose_name=u'末次经期时间', blank=True, null=True)
     clinical_observed = models.CharField(max_length=256, verbose_name=u"临床所见", null=True, blank=True)
-    entry_date = models.CharField(max_length=128, verbose_name=u'录入时间', blank=True, null=True)
 
     is_delete = models.BooleanField(verbose_name='是否逻辑删除', default=False)
-    create_time = models.DateTimeField(verbose_name="创建时间", auto_now_add=True)
-    update_time = models.DateTimeField(verbose_name="更新时间", auto_now=True)
+    create_time = models.DateTimeField(verbose_name=u'创建时间', auto_now_add=True)
+    update_time = models.DateTimeField(verbose_name=u'更新时间', auto_now=True)
 
     class Meta:
         db_table = 'tb_case_info'  # 自定义数据库表的名称

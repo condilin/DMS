@@ -1,80 +1,20 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.generics import ListCreateAPIView
+from rest_framework.generics import ListAPIView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
+from django.db import transaction
 from django.db.models import Count
-import shutil
-from DMS import settings
 
-import os
 import re
+import os
 import time
-import pandas as pd
-from sqlalchemy import create_engine
-from DMS.utils.uploads import save_upload_file
+from DMS.settings.dev import DATA_SAMBA_IMAGE_LOCATE
 
 from Image.models import Image
 from Image.serializers import ImageSerializer
 from Case.models import Case
-
-
-class UploadFile(APIView):
-    """保存上传文件的内容, 读取内容并写入数据库"""
-
-    def post(self, request):
-
-        # 获取上传的文件, 'file'值是前端页面input框的name属性的值
-        _file = request.FILES.get('file', None)
-        # 如果获取不到内容, 则说明上传失败
-        if not _file:
-            return Response(status=status.HTTP_400_BAD_REQUEST, data={"msg": '文件上传失败！'})
-
-        # ---------- 保存上传文件 ---------- #
-
-        # 获取文件的后缀名, 判断上传文件是否符合格式要求
-        suffix_name = os.path.splitext(_file.name)[1]
-        if suffix_name in ['.csv', '.xls', '.xlsx']:
-            upload_file_rename = save_upload_file(_file)
-        else:
-            return Response(status=status.HTTP_400_BAD_REQUEST, data={"msg": '请上传csv或excel格式的文件！'})
-
-        # ---------- 读取上传文件数据 ---------- #
-        # excel格式
-        if suffix_name in ['.xls', '.xlsx']:
-            data = pd.read_excel(upload_file_rename)
-        # csv格式
-        else:
-            data = pd.read_csv(upload_file_rename)
-
-        # 自定义列名
-        # 重新定义表中字段的列名, 因为插入数据库时，时按表中的字段对应一一插入到数据库中的，因此列名要与数据库中保持一致
-        column_name = ['pathology', 'file_name', 'resolution', 'storage_path', 'waveplate_source',
-                       'is_learn', 'diagnosis_label_doctor', 'diagnosis_label_zhu', 'making_way']
-        data.columns = column_name
-
-        # 保存到数据库前，手动添加is_delete列与时间列
-        data['is_delete'] = False
-        data['create_time'] = time.strftime("%Y-%m-%d %H:%M:%S")
-        data['update_time'] = time.strftime("%Y-%m-%d %H:%M:%S")
-
-        # ----------- 保存结果到数据库 ----------- #
-
-        try:
-            # 将数据写入mysql的数据库，但需要先通过sqlalchemy.create_engine建立连接,且字符编码设置为utf8，否则有些latin字符不能处理
-            con = create_engine('mysql+mysqldb://root:kyfq@localhost:3306/dms?charset=utf8')
-            # chunksize:
-            # 如果data的数据量太大，数据库无法响应可能会报错，这时候就可以设置chunksize，比如chunksize = 1000，data就会一次1000的循环写入数据库。
-            # if_exists:
-            # 如果表中有数据，则追加
-            # index:
-            # index=False，则不将dataframe中的index列保存到数据库
-            data.to_sql('tb_big_image_info', con, if_exists='append', index=False, chunksize=1000)
-        except Exception as e:
-            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data={"msg": '导入数据库失败！'})
-
-        return Response(status=status.HTTP_201_CREATED, data={"msg": '上传成功！'})
 
 
 class StatisticView(APIView):
@@ -161,9 +101,9 @@ class FindDuplicateFileName(APIView):
     """查找大图中出现重复的文件名"""
 
     def get(self, request):
-        # 查询文件名出现的次数大于1的记录
-        dup_file_name = Image.objects.filter(is_delete=False).values('file_name').annotate(
-            dup_count=Count('file_name')).filter(dup_count__gt=1)
+        # 查询（文件名和倍数）分组，查找出现的次数大于1的记录
+        dup_file_name = Image.objects.filter(is_delete=False).values('file_name', 'resolution').annotate(
+            dup_count=Count('file_name', 'resolution')).filter(dup_count__gt=1)
         # 转换成列表
         dup_file_name_list = list(dup_file_name)
 
@@ -174,7 +114,75 @@ class FindDuplicateFileName(APIView):
         return Response(status=status.HTTP_200_OK, data=result_dict)
 
 
-class SCImageView(ListCreateAPIView):
+class UpdateDataBase(APIView):
+    """更新数据库中的大图信息表"""
+
+    @staticmethod
+    def timestamp_to_time(timestamp):
+        time_struct = time.localtime(timestamp)
+        return time.strftime('%Y-%m-%d %H:%M:%S', time_struct)
+
+    def post(self, request):
+
+        start_time = time.time()
+
+        # 获取请求体数据
+        update_type = request.POST.get('update_type', None)
+        if update_type != 'db':
+            return Response(status=status.HTTP_403_FORBIDDEN, data={'msg': '请求参数错误！'})
+
+        # 开启事务
+        with transaction.atomic():
+            # 创建保存点
+            save_id = transaction.savepoint()
+
+            try:
+                # 删除表中的记录
+                Image.objects.all().delete()
+
+                # 先查询出训练数据的详细信息,然后再给下面的is_delete去判断在不在里面,提高效率,不用每次去查询表？？？？？！！！！
+                # train_data_file_name = Table.object.filter(file_name=file_name)
+
+                # 定义列表,存储多条数据库数据对象
+                queryset_list = []
+                # 遍历0TIFF目录,获取信息,并保存到数据库
+                for resolution in ['20X', '40X']:
+                    for root, dirs, files in os.walk(os.path.join(DATA_SAMBA_IMAGE_LOCATE, resolution)):
+                        # 只遍历文件夹下的所有文件
+                        for name in files:
+                            # 文件名
+                            file_name, suffix_name = os.path.splitext(name)
+                            # 病理号（通过正则匹配，这个正则不太规范，要重写）
+                            new_match = re.match(r'(.+)[-_]*(.*)', file_name)
+                            pathology = new_match.group(1) if new_match else ''
+                            # 文件创建时间（扫描时间）
+                            file_create_time_ts = os.path.getctime(os.path.join(root, name))
+                            # 是否学习
+                            # is_learn = True if file_name in train_data_file_name else False
+                            # 创建一条记录对象, 并添加到列表
+                            queryset_list.append(Image(pathology=pathology, file_name=file_name,
+                                                       storage_path=root, resolution=resolution,
+                                                       scan_time=self.timestamp_to_time(file_create_time_ts)))
+
+                # 每次save()的时候都会访问一次数据库，导致性能问题。
+                # 使用django.db.models.query.QuerySet.bulk_create()批量创建对象，减少SQL查询次数
+                Image.objects.bulk_create(queryset_list)
+
+            except Exception as e:
+                # 回滚
+                transaction.savepoint_rollback(save_id)
+                return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data={'msg': '数据保存到数据库失败！'})
+
+            # 提交事务
+            transaction.savepoint_commit(save_id)
+
+            end_time = time.time()
+            cost_time = '%.2f' % (end_time - start_time)
+
+            return Response(status=status.HTTP_200_OK, data={'msg': '数据库更新成功！', 'cost_time': cost_time})
+
+
+class SImageView(ListAPIView):
     """查询大图记录，创建大图记录"""
 
     # 指定查询集, 获取没有逻辑删除的数据
@@ -190,8 +198,10 @@ class SCImageView(ListCreateAPIView):
     # 默认指定按哪个字段进行排序
     ordering = ('pathology',)
     # 指定可以被搜索字段, 如在路由中通过?id=2查询id为2的记录
-    filter_fields = ('id', 'pathology',)
+    filter_fields = ('id', 'pathology', 'file_name')
 
+
+# ---------------------------------------------------- waiting ---------------------------------------------- #
 
 class SUDImageView(APIView):
     """查询一条数据，更新大图数据，逻辑删除大图数据"""

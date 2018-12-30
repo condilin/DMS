@@ -184,6 +184,8 @@ REST_FRAMEWORK = {
 # DATA_SAMBA_PREX = '/run/user/1000/gvfs/smb-share:server=192.168.2.221,share=data_samba/'
 # TRASH_FILE_PATH = 'TMP'
 
+# data_samba服务器中存储大图的目录
+DATA_SAMBA_IMAGE_LOCATE = '/run/user/1000/gvfs/smb-share:server=192.168.2.221,share=data_samba/DATA/0TIFF'
 
 # ------------------------------ 配置日志 ------------------------------ #
 LOGGING = {

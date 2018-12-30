@@ -14,13 +14,7 @@ class DiagnosisAdmin(admin.ModelAdmin):
     #     return obj.image_info_diagnosis.pathology
 
     # 在文章列表页面显示的字段, 不是详情里面的字段
-    # list_display = ['id', 'get_pathology', 'his_diagnosis_label', 'create_time', 'update_time']
-    list_display = ['id', 'his_diagnosis_label', 'create_time', 'update_time']
+    list_display = ['id', 'pathology', 'diagnosis_label_lastest', 'create_time', 'update_time']
 
     # 设置哪些字段可以点击进入编辑界面
-    # list_display_links = ('id', 'get_pathology')
-    list_display_links = ('id', )
-
-    # ------- 详情页信息 --------- #
-
-    # 详情页显示的字段
+    list_display_links = ('id', 'pathology')
