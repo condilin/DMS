@@ -5,7 +5,7 @@ from rest_framework.generics import ListAPIView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, F
 
 import shutil
 import os
@@ -33,12 +33,13 @@ class StatisticView(APIView):
 
         # 2.1 各类数量：
         # 统计各类标签不含null值的个数
-        diag_label_count = Case.objects.filter(is_delete=False, diagnosis_label_doctor__isnull=False).values(
-            'diagnosis_label_doctor').annotate(
-            diagnosis_label_count=Count('diagnosis_label_doctor')
+        diag_label_count = Case.objects.filter(is_delete=False, diagnosis_label_doctor_filter__isnull=False).values(
+            'diagnosis_label_doctor_filter').annotate(
+            diagnosis_label_count=Count('diagnosis_label_doctor_filter')
         ).order_by('diagnosis_label_count')
+
         # 统计各类标签为null值的个数
-        label_null_count = Case.objects.filter(is_delete=False, diagnosis_label_doctor__isnull=True).count()
+        label_null_count = Case.objects.filter(is_delete=False, diagnosis_label_doctor_filter__isnull=True).count()
         label_null_dict = {
             'diagnosis_label_count': label_null_count,
             'diagnosis_label_doctor': None
@@ -81,6 +82,9 @@ class StatisticView(APIView):
 
         # ----- 大图信息表 ------ #
 
+        # 大图数量
+        image_count = Image.objects.count()
+
         # 4. 倍数
 
         # 4.1 各类数量：
@@ -89,41 +93,21 @@ class StatisticView(APIView):
             'resolution').annotate(
             resolution_count=Count('resolution')
         ).order_by('resolution')
-        # 统计各类倍数为null值的个数
-        resolution_null_count = Image.objects.filter(is_delete=False, resolution__isnull=True).count()
-        resolution_null_dict = {
-            'resolution_count': resolution_null_count,
-            'resolution': None
-        }
 
-        # 合并并转换成列表
+        # 转换成列表
         resolution_count_list = list(resolution_count)
-        # 如果有空值, 则把空值的统计也添加上, 否则不需要统计空值的个数及占比
-        if resolution_null_count:
-            resolution_count_list.append(resolution_null_dict)
 
         # 4.2 各类占比：
         for num in resolution_count_list:
-            num['label_prop'] = '%.3f' % (num['diagnosis_label_count'] / case_count * 100) + '%'
-
-        # # ----- 各倍数数量, 占比 ----- #
-        resolution_count = Image.objects.filter(is_delete=False).values('resolution').annotate(
-            res_count=Count('resolution')
-        )
-        # 转换成列表
-        resolution_count_list = list(resolution_count)
-        # 添加倍数占比
-        for i in resolution_count_list:
-            i['res_prop'] = '%.2f' % (i['res_count'] / case_count * 100) + '%'
-
-
+            num['label_prop'] = '%.3f' % (num['resolution_count'] / image_count * 100) + '%'
 
         # ----- 返回结果 ------ #
         result_dict = {
             'case_count': case_count,
+            'image_count': image_count,
             'diag_label_count': diag_label_count_list,
             'waveplate_source_count': wp_source_count_list,
-            'resolution_count': resolution_count
+            'resolution_count': resolution_count_list
         }
         return Response(status=status.HTTP_200_OK, data=result_dict)
 
@@ -172,7 +156,7 @@ class DownloadFile(APIView):
 
 class UpdateDataBase(APIView):
     """
-    post: 更新数据库中的大图信息表
+    post: 更新数据库中的大图数据表
     """
 
     @staticmethod
@@ -209,8 +193,9 @@ class UpdateDataBase(APIView):
                 # 删除表中没有逻辑删除的记录,那些已逻辑删除的要保存记录下来
                 Image.objects.filter(is_delete=False).delete()
 
-                # 先查询出训练数据的详细信息,然后再给下面的is_delete去判断在不在里面,提高效率,不用每次去查询表？？？？？！！！！
+                # 方案1：先查询出训练数据的详细信息,然后再给下面的is_delete去判断在不在里面,提高效率,不用每次去查询表？？？？？！！！！
                 # train_data_file_name = Table.object.filter(file_name=file_name)
+                # 方案2：使用F对象
 
                 # 定义列表,存储多条数据库数据对象
                 queryset_list = []

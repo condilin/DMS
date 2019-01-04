@@ -13,6 +13,7 @@ class Case(models.Model):
     diagnosis_date = models.CharField(max_length=128, verbose_name=u"诊断时间", blank=True, null=True)
     last_menstruation = models.CharField(max_length=128, verbose_name=u'末次经期时间', blank=True, null=True)
     clinical_observed = models.CharField(max_length=256, verbose_name=u"临床所见", null=True, blank=True)
+    diagnosis_label_doctor_filter = models.CharField(max_length=64, verbose_name=u'医生诊断标签筛选', null=True, blank=True)
 
     is_delete = models.BooleanField(verbose_name='是否逻辑删除', default=False)
     create_time = models.DateTimeField(verbose_name=u'创建时间', auto_now_add=True)

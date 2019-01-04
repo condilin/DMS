@@ -20,7 +20,7 @@ from Case.serializers import CaseSerializer
 
 class UploadFile(APIView):
     """
-    post: 上传csv/xls/xlsx格式的数据
+    post: 上传csv/excel格式的数据
     """
 
     def post(self, request):
@@ -53,10 +53,11 @@ class UploadFile(APIView):
                        'diagnosis_date', 'last_menstruation', 'clinical_observed']
         data.columns = column_name
 
-        # 保存到数据库前，手动添加is_delete列与时间列
+        # 保存到数据库前, 手动添加is_delete列与时间列, 以及对诊断标签进行处理
         data['is_delete'] = False
         data['create_time'] = time.strftime("%Y-%m-%d %H:%M:%S")
         data['update_time'] = time.strftime("%Y-%m-%d %H:%M:%S")
+        data['diagnosis_label_doctor_filter'] = data.diagnosis_label_doctor.str.extract(r'(\w+)')
 
         # ----------- 保存结果到数据库 ----------- #
         # 开启事务
@@ -115,7 +116,7 @@ class DownloadFile(APIView):
 
 class FindDuplicateFileName(APIView):
     """
-    get: 查找病例中出现重复的病理号
+    get: 查找病例中出现重复的病理号及重复的次数
     """
 
     def get(self, request):
@@ -134,7 +135,7 @@ class FindDuplicateFileName(APIView):
 
 class SCCaseView(ListCreateAPIView):
     """
-    get: 查询病例列表
+    get: 查询病例记录列表
     post: 新增一条病例记录
     """
 
