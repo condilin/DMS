@@ -12,16 +12,12 @@ class Image(models.Model):
     file_name = models.CharField(max_length=128, verbose_name=u'文件名', null=True, blank=True)
     resolution = models.CharField(max_length=8, verbose_name=u'分辨率', null=True, blank=True)
     storage_path = models.CharField(max_length=256, verbose_name=u'存储路径', null=True, blank=True)
-    scan_time = models.CharField(max_length=64, verbose_name=u'扫描时间', null=True, blank=True)
-
-    # 通过训练数据判断
+    waveplate_source = models.CharField(max_length=64, verbose_name=u'片源', null=True, blank=True)
     is_learn = models.BooleanField(verbose_name=u'是否学习', default=False)
-
-    # 外键
-    case_info = models.OneToOneField(Case, on_delete=models.SET_NULL, related_name='case_info',
-                                     blank=True, null=True, verbose_name=u'病例信息')
-    diagnosis_label_zhu = models.OneToOneField(Diagnosis, on_delete=models.SET_NULL, related_name='diagnosis_label_zhu',
-                                               blank=True, null=True, verbose_name=u'朱博士诊断标签')
+    diagnosis_label_doctor = models.CharField(max_length=128, blank=True, null=True, verbose_name=u'医生诊断标签')
+    diagnosis_label_zhu = models.CharField(max_length=128, blank=True, null=True, verbose_name=u'朱博士诊断标签')
+    making_way = models.CharField(max_length=64, verbose_name=u'切片制式', null=True, blank=True)
+    scan_time = models.CharField(max_length=64, verbose_name=u'扫描时间', null=True, blank=True)
 
     is_delete = models.BooleanField(verbose_name=u'是否逻辑删除', default=False)
     create_time = models.DateTimeField(verbose_name=u'创建时间', auto_now_add=True)
