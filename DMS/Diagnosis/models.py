@@ -1,7 +1,5 @@
 from django.db import models
 
-# Create your models here.
-
 
 class Diagnosis(models.Model):
     """朱博士对大图的诊断标签"""

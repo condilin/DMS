@@ -1,6 +1,4 @@
 from django.db import models
-from Case.models import Case
-from Diagnosis.models import Diagnosis
 
 
 class Image(models.Model):

@@ -1,6 +1,4 @@
 from django.db import models
-from Image.models import Image
-# Create your models here.
 
 
 class FileRenameRecord(models.Model):

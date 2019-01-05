@@ -5,7 +5,7 @@ from rest_framework.generics import ListAPIView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django.db import transaction
-from django.db.models import Count, F
+from django.db.models import Count
 
 import shutil
 import os
