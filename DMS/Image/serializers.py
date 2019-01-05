@@ -14,4 +14,5 @@ class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
         fields = ('id', 'pathology', 'file_name', 'resolution', 'storage_path',
-                  'scan_time', 'is_learn')
+                  'waveplate_source', 'is_learn', 'diagnosis_label_doctor',
+                  'diagnosis_label_zhu', 'making_way', 'scan_time')

@@ -317,19 +317,23 @@ class SUDImageView(APIView):
                 image_full_path = os.path.join(image.storage_path, image.file_name + '.kfb')
                 image_rename = os.path.join(image.storage_path, form_file_name + '.kfb')
                 shutil.move(image_full_path, image_rename)
-
+                # 更新数据库中大图的文件名
                 image.file_name = form_file_name
                 image.save()
             except Exception as e:
                 return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data={'msg', '更新文件名失败！'})
         elif form_pathology:
             try:
+                # 判断要修改的病理号和文件名是否一样
+                if form_pathology != image.file_name:
+                    return Response(status=status.HTTP_400_BAD_REQUEST, data={'msg': '病理号与文件名不一样！'})
+                # 修改病理号
                 image.pathology = form_pathology
                 image.save()
             except Exception as e:
-                return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data={'msg', '更新病理号失败！'})
+                return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data={'msg': '更新病理号失败！'})
         else:
-            return Response(status=status.HTTP_403_FORBIDDEN, data={'msg', '参数错误！'})
+            return Response(status=status.HTTP_403_FORBIDDEN, data={'msg': '参数错误, 只能修改文件名或病理号！'})
 
         # 返回更新的那条数据
         res = Image.objects.get(id=pk, is_delete=False)
@@ -342,18 +346,21 @@ class SUDImageView(APIView):
         except Image.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND, data={'msg': '数据不存在！'})
 
-        # 在data_samba中将该大图移动到临时的文件(新建一个作为垃圾桶)
         try:
+            # 在data_samba中将该大图移动到临时的文件(/TMP/GARBAGE)
             image_full_path = os.path.join(image.storage_path, image.file_name + '.kfb')
             trash_full_path = os.path.join(DATA_SAMBA_PREX, TRASH_FILE_PATH)
+            # 如果目录不存在, 则创建
+            if not os.path.exists(trash_full_path):
+                os.mkdir(trash_full_path)
             shutil.move(image_full_path, trash_full_path)
 
-            # 逻辑删除, .save方法适合于单条记录的保存, 而.update方法适用于批量数据的保存
+            # 数据库中逻辑删除
             image.is_delete = True
             image.save()
 
         except Exception as e:
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            data={'msg': '移动图片到垃圾桶失败, 可能原因是图片路径错误, 该图片不是.kfb图片！'})
+                            data={'msg': '移动图片到data_samba/TMP/IMAGE_GARBAGE失败, 可能原因是该图片不是.kfb图片！'})
 
         return Response(status=status.HTTP_204_NO_CONTENT, data={'msg': '删除成功！'})

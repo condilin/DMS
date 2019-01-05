@@ -182,8 +182,8 @@ REST_FRAMEWORK = {
 # ------------------------------ 自定义参数设置 ------------------------------ #
 
 # 移动大图到垃圾文件夹的目录
-DATA_SAMBA_PREX = '/run/user/1000/gvfs/smb-share:server=192.168.2.221,share=data_samba/'
-TRASH_FILE_PATH = 'TMP'
+DATA_SAMBA_PREX = '/run/user/1000/gvfs/smb-share:server=192.168.2.221,share=data_samba'
+TRASH_FILE_PATH = 'TMP/IMAGE_GARBAGE'
 
 # data_samba服务器中存储大图的目录
 DATA_SAMBA_IMAGE_LOCATE = '/run/user/1000/gvfs/smb-share:server=192.168.2.221,share=data_samba/DATA/0TIFF'
@@ -237,19 +237,16 @@ FILE_UPLOAD_HANDLERS = ("django_excel.ExcelMemoryFileUploadHandler",
                         "django_excel.TemporaryExcelFileUploadHandler",)
 
 
-# swagger 配置项
+# ------------------------------------- 配置swagger -------------------------------------- #
+
 SWAGGER_SETTINGS = {
     # 基础样式
     'SECURITY_DEFINITIONS': {
-        "basic":{
+        "basic": {
             'type': 'basic'
         }
     },
-    # 如果需要登录才能够查看接口文档, 登录的链接使用restframework自带的.
-    # 'LOGIN_URL': 'rest_framework:login',
-    # 'LOGOUT_URL': 'rest_framework:logout',
-    'SHOW_REQUEST_HEADERS':True,
-    # 'USE_SESSION_AUTH': True,
+    'SHOW_REQUEST_HEADERS': True,
     # 控制API列表的显示方式, None：折叠所有(默认), list：列出所有操作
     'DOC_EXPANSION': 'list',
     # 接口文档中方法列表以首字母升序排列
@@ -258,5 +255,4 @@ SWAGGER_SETTINGS = {
     'JSON_EDITOR': True,
     # 方法列表字母排序
     'OPERATIONS_SORTER': 'alpha',
-    'VALIDATOR_URL': None,
 }
