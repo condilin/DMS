@@ -85,7 +85,6 @@ class UploadFile(APIView):
             # 提交事务
             transaction.savepoint_commit(save_id)
 
-            # 写入image表后，再同步写入更名记录表以及朱博士诊断表????
             return Response(status=status.HTTP_201_CREATED, data={"msg": '上传成功！'})
 
 
@@ -152,7 +151,7 @@ class SCCaseView(ListCreateAPIView):
     # 默认指定按哪个字段进行排序
     ordering = ('pathology',)
     # 指定可以被搜索字段, 如在路由中通过?id=2查询id为2的记录
-    filter_fields = ('id', 'diagnosis_label_doctor')
+    filter_fields = ('id', 'pathology', 'diagnosis_label_doctor')
 
 
 class SUDCaseView(APIView):
@@ -166,7 +165,7 @@ class SUDCaseView(APIView):
         try:
             case = Case.objects.get(id=pk, is_delete=False)
         except Case.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response(status=status.HTTP_404_NOT_FOUND, data={'msg': '数据不存在！'})
 
         # 序列化返回
         serializer = CaseSerializer(case)
@@ -177,10 +176,10 @@ class SUDCaseView(APIView):
         try:
             case = Case.objects.get(id=pk, is_delete=False)
         except Case.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response(status=status.HTTP_404_NOT_FOUND, data={'msg': '数据不存在！'})
 
         # 逻辑删除, .save方法适合于单条记录的保存, 而.update方法适用于批量数据的保存
         case.is_delete = True
         case.save()
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_204_NO_CONTENT, data={'msg': '删除成功！'})

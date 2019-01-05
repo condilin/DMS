@@ -289,7 +289,7 @@ class SUDImageView(APIView):
         try:
             image = Image.objects.get(id=pk, is_delete=False)
         except Image.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response(status=status.HTTP_404_NOT_FOUND, data={'msg': '数据不存在！'})
 
         # 序列化返回
         serializer = ImageSerializer(image)
@@ -300,7 +300,7 @@ class SUDImageView(APIView):
         try:
             image = Image.objects.get(id=pk, is_delete=False)
         except Image.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response(status=status.HTTP_404_NOT_FOUND, data={'msg': '数据不存在！'})
 
         # 获取参数
         form_file_name = request.data.get('file_name', None)
@@ -336,7 +336,7 @@ class SUDImageView(APIView):
         try:
             image = Image.objects.get(id=pk, is_delete=False)
         except Image.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response(status=status.HTTP_404_NOT_FOUND, data={'msg': '数据不存在！'})
 
         # 在data_samba中将该大图移动到临时的文件(新建一个作为垃圾桶)
         try:
@@ -352,4 +352,4 @@ class SUDImageView(APIView):
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             data={'msg': '移动图片到垃圾桶失败, 可能原因是图片路径错误, 该图片不是.kfb图片！'})
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_204_NO_CONTENT, data={'msg': '删除成功！'})

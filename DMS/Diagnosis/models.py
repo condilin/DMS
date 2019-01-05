@@ -8,8 +8,6 @@ class Diagnosis(models.Model):
     id = models.AutoField(primary_key=True, verbose_name=u'唯一主键')
     pathology = models.CharField(max_length=128, verbose_name=u'病理号', null=True, blank=True)
     diagnosis_label_lastest = models.CharField(max_length=64, verbose_name=u'朱博士最新诊断标签', null=True, blank=True)
-    # image_info_diagnosis = models.ForeignKey(Image, on_delete=models.CASCADE, related_name='image_info_diagnosis',
-    #                                          blank=True, null=True, verbose_name=u'大图信息')
     his_diagnosis_label1 = models.CharField(max_length=64, verbose_name=u'朱博士历史诊断标签1', null=True, blank=True)
     his_diagnosis_label2 = models.CharField(max_length=64, verbose_name=u'朱博士历史诊断标签2', null=True, blank=True)
     his_diagnosis_label3 = models.CharField(max_length=64, verbose_name=u'朱博士历史诊断标签3', null=True, blank=True)

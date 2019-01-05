@@ -4,10 +4,10 @@ from rest_framework.views import APIView
 from rest_framework.generics import ListCreateAPIView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
+from django.db import transaction
 from django.db.models import Count
 
 import os
-import re
 import time
 import pandas as pd
 from sqlalchemy import create_engine
@@ -18,7 +18,9 @@ from FileRenameRecord.serializers import RenameSerializer
 
 
 class UploadFile(APIView):
-    """保存上传文件的内容, 读取内容并写入数据库"""
+    """
+    post: 上传csv/excel格式的数据
+    """
 
     def post(self, request):
 
@@ -47,11 +49,9 @@ class UploadFile(APIView):
 
         # ---------- 自定义列名以及增加列字段值 ---------- #
         # 重新定义表中字段的列名, 因为插入数据库时，时按表中的字段对应一一插入到数据库中的，因此列名要与数据库中保持一致
-        column_name = ['current_file_name', 'his_name1', 'his_name2', 'his_name3', 'his_name4', 'his_name5']
+        column_name = ['pathology', 'current_file_name', 'his_name1', 'his_name2',
+                       'his_name3', 'his_name4', 'his_name5']
         data.columns = column_name
-
-        # 新增一列病理号, 通过文件名自动获取
-        data['pathology'] = data.current_file_name.str.extract(r'(.+?)[-_](.+)')[0]
 
         # 保存到数据库前，手动添加is_delete列与时间列
         data['is_delete'] = False
@@ -59,25 +59,38 @@ class UploadFile(APIView):
         data['update_time'] = time.strftime("%Y-%m-%d %H:%M:%S")
 
         # ----------- 保存结果到数据库 ----------- #
+        # 开启事务
+        with transaction.atomic():
+            # 创建保存点
+            save_id = transaction.savepoint()
 
-        try:
-            # 将数据写入mysql的数据库，但需要先通过sqlalchemy.create_engine建立连接,且字符编码设置为utf8，否则有些latin字符不能处理
-            con = create_engine('mysql+mysqldb://root:kyfq@localhost:3306/dms?charset=utf8')
-            # chunksize:
-            # 如果data的数据量太大，数据库无法响应可能会报错，这时候就可以设置chunksize，比如chunksize = 1000，data就会一次1000的循环写入数据库。
-            # if_exists:
-            # 如果表中有数据，则追加
-            # index:
-            # index=False，则不将dataframe中的index列保存到数据库
-            data.to_sql('tb_rename', con, if_exists='append', index=False, chunksize=1000)
-        except Exception as e:
-            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data={"msg": '导入数据库失败！'})
+            try:
+                # 删除表中没有逻辑删除的记录,那些已逻辑删除的要保存记录下来
+                FileRenameRecord.objects.filter(is_delete=False).delete()
 
-        return Response(status=status.HTTP_201_CREATED, data={"msg": '上传成功！'})
+                # 将数据写入mysql的数据库，但需要先通过sqlalchemy.create_engine建立连接,且字符编码设置为utf8，否则有些latin字符不能处理
+                con = create_engine('mysql+mysqldb://root:kyfq@localhost:3306/dms?charset=utf8')
+                # chunksize:
+                # 如果data的数据量太大，数据库无法响应可能会报错，这时候就可以设置chunksize，比如chunksize = 1000，data就会一次1000的循环写入数据库。
+                # if_exists:
+                # 如果表中有数据，则追加
+                # index:
+                # index=False，则不将dataframe中的index列保存到数据库
+                data.to_sql('tb_rename', con, if_exists='append', index=False, chunksize=1000)
+            except Exception as e:
+                transaction.savepoint_rollback(save_id)
+                return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data={"msg": '导入数据库失败！'})
+
+            # 提交事务
+            transaction.savepoint_commit(save_id)
+
+            return Response(status=status.HTTP_201_CREATED, data={"msg": '上传成功！'})
 
 
 class FindDuplicateFileName(APIView):
-    """查找更名记录中出现重复的文件名"""
+    """
+    get: 查找更名记录中出现重复的文件名
+    """
 
     def get(self, request):
         # 查询文件名出现的次数大于1的记录
@@ -94,7 +107,10 @@ class FindDuplicateFileName(APIView):
 
 
 class SCRenameView(ListCreateAPIView):
-    """查询更名记录，创建更名记录"""
+    """
+    get: 查询更名记录列表
+    post: 创建一条更新记录
+    """
 
     # 指定查询集, 获取没有逻辑删除的数据
     queryset = FileRenameRecord.objects.filter(is_delete=False)
@@ -113,14 +129,18 @@ class SCRenameView(ListCreateAPIView):
 
 
 class SUDRenameView(APIView):
-    """查询一条数据，更新大图数据，逻辑删除大图数据"""
+    """
+    get: 查询一条更名记录
+    patch: 更新一条更名记录
+    delete: 删除一条更名记录
+    """
 
     def get(self, request, pk):
         # 根据id, 查询数据库对象
         try:
             image = FileRenameRecord.objects.get(id=pk, is_delete=False)
         except FileRenameRecord.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response(status=status.HTTP_404_NOT_FOUND, data={'msg': '数据不存在！'})
 
         # 序列化返回
         serializer = RenameSerializer(image)
@@ -131,20 +151,12 @@ class SUDRenameView(APIView):
         try:
             image = FileRenameRecord.objects.get(id=pk, is_delete=False)
         except FileRenameRecord.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response(status=status.HTTP_404_NOT_FOUND, data={'msg': '数据不存在！'})
 
         # 获取参数, 校验参数, 保存结果
         serializer = RenameSerializer(image, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-
-        # 如果修改了文件名, 则同步修改病理号
-        get_file_name = request.data.get('current_file_name', None)
-        if get_file_name:
-            new_match = re.match(r'(.+?)[-_](.+)', get_file_name)
-            if new_match:
-                image.pathology = new_match.group(1)
-                image.save()
 
         return Response(serializer.data)
 
@@ -153,10 +165,10 @@ class SUDRenameView(APIView):
         try:
             image = FileRenameRecord.objects.get(id=pk, is_delete=False)
         except FileRenameRecord.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response(status=status.HTTP_404_NOT_FOUND, data={'msg': '数据不存在！'})
 
         # 逻辑删除, .save方法适合于单条记录的保存, 而.update方法适用于批量数据的保存
         image.is_delete = True
         image.save()
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_204_NO_CONTENT, data={'msg': '删除成功！'})
