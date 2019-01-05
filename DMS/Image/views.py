@@ -157,6 +157,10 @@ class DownloadFile(APIView):
 class UpdateDataBase(APIView):
     """
     post: 更新数据库中的大图数据表
+    :parameter:
+        update_type: 指定更新类型
+    :example:
+        请求体中带上 {“update_type”: “db”}
     """
 
     @staticmethod
