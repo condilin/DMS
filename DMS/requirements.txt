@@ -6,6 +6,7 @@ coreschema==0.0.4
 decorator==4.3.0
 Django==2.0.6
 django-cors-headers==2.4.0
+django-crontab==0.7.1
 django-excel==0.0.10
 django-extensions==2.1.4
 django-filter==1.1.0

@@ -205,7 +205,6 @@ class UpdateDataBase(APIView):
                 queryset_list = []
                 # 遍历0TIFF目录,获取信息,并保存到数据库
                 for resolution in ['20X', '40X']:
-                    a = os.path.join(DATA_SAMBA_IMAGE_LOCATE, resolution)
                     for root, dirs, files in os.walk(os.path.join(DATA_SAMBA_IMAGE_LOCATE, resolution), topdown=False):
                         # 只遍历文件夹下的所有文件
                         for name in files:
@@ -316,7 +315,7 @@ class SUDImageView(APIView):
                 # 更新data_samba中大图的文件名
                 image_full_path = os.path.join(image.storage_path, image.file_name + '.kfb')
                 image_rename = os.path.join(image.storage_path, form_file_name + '.kfb')
-                shutil.move(image_full_path, image_rename)
+                # shutil.move(image_full_path, image_rename)
                 # 更新数据库中大图的文件名
                 image.file_name = form_file_name
                 image.save()
@@ -353,7 +352,7 @@ class SUDImageView(APIView):
             # 如果目录不存在, 则创建
             if not os.path.exists(trash_full_path):
                 os.mkdir(trash_full_path)
-            shutil.move(image_full_path, trash_full_path)
+            # shutil.move(image_full_path, trash_full_path)
 
             # 数据库中逻辑删除
             image.is_delete = True

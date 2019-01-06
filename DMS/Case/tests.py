@@ -1,7 +1,5 @@
-from django.contrib.auth.models import User, Permission
 from django.test import TestCase, Client
 import json
-from Image.models import Image
 
 
 class CaseTestCase(TestCase):

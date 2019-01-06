@@ -19,3 +19,6 @@ class FileRenameRecordAdmin(admin.ModelAdmin):
 
     # 设置哪些字段可以点击进入编辑界面
     list_display_links = ('id', 'pathology')
+
+    # 每页显示10条记录
+    list_per_page = 10

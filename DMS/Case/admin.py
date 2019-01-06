@@ -16,6 +16,9 @@ class CaseAdmin(admin.ModelAdmin):
     # 设置哪些字段可以点击进入编辑界面
     list_display_links = ('id', 'pathology')
 
+    # 每页显示10条记录
+    list_per_page = 10
+
     # 按最新创建的时间排序. ordering设置默认排序字段，负号表示降序排序
     ordering = ('-update_time',)
 

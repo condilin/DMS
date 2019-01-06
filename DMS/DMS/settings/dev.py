@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'rest_framework_swagger',
+    'django_crontab',
     'django_extensions',  # python manage.py shell_plus --print-sql
 
     # 自己的应用
