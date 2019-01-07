@@ -47,6 +47,9 @@ class UploadFile(APIView):
         else:
             data = pd.read_csv(upload_file_rename)
 
+        # ---------- 删除上传文件数据 ---------- #
+        os.remove(upload_file_rename)
+
         # ---------- 自定义列名以及增加列字段值 ---------- #
         # 重新定义表中字段的列名, 因为插入数据库时，时按表中的字段对应一一插入到数据库中的，因此列名要与数据库中保持一致
         column_name = ['pathology', 'current_file_name', 'his_name1', 'his_name2',
