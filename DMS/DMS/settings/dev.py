@@ -73,7 +73,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'rest_framework_swagger',
-    'django_crontab',
+    # 'django_crontab',
     'django_extensions',  # python manage.py shell_plus --print-sql
 
     # 自己的应用
@@ -165,9 +165,12 @@ USE_L10N = True
 USE_TZ = False
 
 
+# ------------------------------ 静态文件相关配置 ------------------------------ #
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
+STATIC_ROOT = os.path.join(BASE_DIR, '../../resources/static')
 STATIC_URL = '/static/'
 
 
@@ -189,7 +192,9 @@ TRASH_FILE_PATH = 'TMP/IMAGE_GARBAGE'
 # data_samba服务器中存储大图的目录
 DATA_SAMBA_IMAGE_LOCATE = '/run/user/1000/gvfs/smb-share:server=192.168.2.221,share=data_samba/DATA/0TIFF'
 
+
 # ------------------------------ 配置日志 ------------------------------ #
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,  # 是否禁用已经存在的日志器
