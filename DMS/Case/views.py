@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.generics import ListCreateAPIView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
-from django.db.models import Count
+from django.db.models import Count, F
 from django.db import transaction
 
 import os
@@ -106,11 +106,17 @@ class DownloadFile(APIView):
         if suffix_name not in ['csv', 'xlsx', 'xls']:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={'msg': '仅支持下载csv和excel格式！'})
 
-        img_data = Case.objects.values('pathology', 'diagnosis_label_doctor', 'waveplate_source', 'making_way',
-                                       'check_date', 'diagnosis_date', 'last_menstruation', 'clinical_observed')
+        # 通过指定字段的别名, 指定返回的格式顺序, 下载时默认按字母进行排序
+        case_data = Case.objects.filter(is_delete=False).annotate(
+            c1_病理号=F('pathology'), c2_医生诊断=F('diagnosis_label_doctor'),
+            c3_片源=F('waveplate_source'), c4_切片制式=F('making_way'),
+            c5_采样_检查时间=F('check_date'), c6_诊断时间=F('diagnosis_date'),
+            c7_末次经期时间=F('last_menstruation'), c8_临床所见=F('clinical_observed')).values(
+            'c1_病理号', 'c2_医生诊断', 'c3_片源', 'c4_切片制式', 'c5_采样_检查时间',
+            'c6_诊断时间', 'c7_末次经期时间', 'c8_临床所见')
 
         # 返回对应格式的文件
-        return excel.make_response_from_records(img_data, file_type=suffix_name, file_name='大图信息')
+        return excel.make_response_from_records(case_data, file_type=suffix_name, file_name='病例信息')
 
 
 class FindDuplicateFileName(APIView):

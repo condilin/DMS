@@ -5,7 +5,7 @@ from rest_framework.generics import ListAPIView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, F
 
 import shutil
 import os
@@ -147,8 +147,15 @@ class DownloadFile(APIView):
         if suffix_name not in ['csv', 'xlsx', 'xls']:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={'msg': '仅支持下载csv和excel格式！'})
 
-        img_data = Image.objects.values('pathology', 'file_name', 'resolution', 'storage_path', 'waveplate_source',
-                                        'making_way', 'is_learn', 'diagnosis_label_zhu', 'diagnosis_label_doctor')
+        # 通过指定字段的别名, 指定返回的格式顺序, 下载时默认按字母进行排序
+        img_data = Image.objects.filter(is_delete=False).annotate(
+            c1_病理号=F('pathology'), c2_文件名=F('file_name'),
+            c3_分辨率=F('resolution'), c4_存储路径=F('storage_path'),
+            c5_片源=F('waveplate_source'), c6_切片制式=F('making_way'),
+            c7_是否学习=F('is_learn'), c8_医生诊断标签=F('diagnosis_label_doctor'),
+            c9_朱博士诊断标签=F('diagnosis_label_zhu')).values(
+            'c1_病理号', 'c2_文件名', 'c3_分辨率', 'c4_存储路径', 'c5_片源',
+            'c6_切片制式', 'c7_是否学习', 'c8_医生诊断标签', 'c9_朱博士诊断标签')
 
         # 返回对应格式的文件
         return excel.make_response_from_records(img_data, file_type=suffix_name, file_name='大图信息')
