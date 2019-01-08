@@ -93,7 +93,7 @@ class UploadFile(APIView):
 
 class DownloadFile(APIView):
     """
-    get: 导出csv/excel数据
+    get: 导出全部的病例csv/excel数据
     :parameter:
         type: 指定下载的格式, csv/xlsx/xls
     :example:
@@ -120,6 +120,41 @@ class DownloadFile(APIView):
 
         # 返回对应格式的文件
         return excel.make_response_from_records(case_data, file_type=suffix_name, file_name='病例信息')
+
+
+class DownloadDuplicateName(APIView):
+    """
+    get: 导出重复病理号的病例csv/excel数据
+    :parameter:
+        type: 指定下载的格式, csv/xlsx/xls
+    :example:
+        /api/v1/cases/downloads/duppaths/?type=csv
+    """
+
+    def get(self, request):
+
+        suffix_name = request.GET.get('type', None)
+        if not suffix_name:
+            return Response(status=status.HTTP_403_FORBIDDEN, data={'msg': '请求参数错误！'})
+
+        if suffix_name not in ['csv', 'xlsx', 'xls']:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={'msg': '仅支持下载csv和excel格式！'})
+
+        # 查询病理号出现的次数大于1的记录的病理号值
+        dup_file_name = Case.objects.filter(is_delete=False).values('pathology').annotate(
+            dup_count=Count('pathology')).filter(dup_count__gt=1).values_list('pathology', flat=True)
+
+        # 通过指定字段的别名, 指定返回的格式顺序, 下载时默认按字母进行排序
+        duplicate_case_data = Case.objects.filter(pathology__in=list(dup_file_name)).annotate(
+            c1_病理号=F('pathology'), c2_医生诊断=F('diagnosis_label_doctor'),
+            c3_片源=F('waveplate_source'), c4_切片制式=F('making_way'),
+            c5_采样_检查时间=F('check_date'), c6_诊断时间=F('diagnosis_date'),
+            c7_末次经期时间=F('last_menstruation'), c8_临床所见=F('clinical_observed')).values(
+            'c1_病理号', 'c2_医生诊断', 'c3_片源', 'c4_切片制式', 'c5_采样_检查时间',
+            'c6_诊断时间', 'c7_末次经期时间', 'c8_临床所见')
+
+        # 返回对应格式的文件
+        return excel.make_response_from_records(duplicate_case_data, file_type=suffix_name, file_name='病例信息')
 
 
 class FindDuplicateFileName(APIView):

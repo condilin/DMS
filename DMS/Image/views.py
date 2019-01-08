@@ -345,28 +345,28 @@ class SUDImageView(APIView):
         res = Image.objects.get(id=pk, is_delete=False)
         return Response(status=status.HTTP_200_OK, data={'pathology': res.pathology, 'file_name': res.file_name})
 
-    def delete(self, request, pk):
-        # 根据id, 查询数据库对象
-        try:
-            image = Image.objects.get(id=pk, is_delete=False)
-        except Image.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND, data={'msg': '数据不存在！'})
-
-        try:
-            # 在data_samba中将该大图移动到临时的文件(/TMP/GARBAGE)
-            image_full_path = os.path.join(image.storage_path, image.file_name + '.kfb')
-            trash_full_path = os.path.join(DATA_SAMBA_PREX, TRASH_FILE_PATH)
-            # 如果目录不存在, 则创建
-            if not os.path.exists(trash_full_path):
-                os.mkdir(trash_full_path)
-            # shutil.move(image_full_path, trash_full_path)
-
-            # 数据库中逻辑删除
-            image.is_delete = True
-            image.save()
-
-        except Exception as e:
-            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            data={'msg': '移动图片到data_samba/TMP/IMAGE_GARBAGE失败, 可能原因是该图片不是.kfb图片！'})
-
-        return Response(status=status.HTTP_204_NO_CONTENT, data={'msg': '删除成功！'})
+    # def delete(self, request, pk):
+    #     # 根据id, 查询数据库对象
+    #     try:
+    #         image = Image.objects.get(id=pk, is_delete=False)
+    #     except Image.DoesNotExist:
+    #         return Response(status=status.HTTP_404_NOT_FOUND, data={'msg': '数据不存在！'})
+    #
+    #     try:
+    #         # 在data_samba中将该大图移动到临时的文件(/TMP/GARBAGE)
+    #         image_full_path = os.path.join(image.storage_path, image.file_name + '.kfb')
+    #         trash_full_path = os.path.join(DATA_SAMBA_PREX, TRASH_FILE_PATH)
+    #         # 如果目录不存在, 则创建
+    #         if not os.path.exists(trash_full_path):
+    #             os.mkdir(trash_full_path)
+    #         # shutil.move(image_full_path, trash_full_path)
+    #
+    #         # 数据库中逻辑删除
+    #         image.is_delete = True
+    #         image.save()
+    #
+    #     except Exception as e:
+    #         return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #                         data={'msg': '移动图片到data_samba/TMP/IMAGE_GARBAGE失败, 可能原因是该图片不是.kfb图片！'})
+    #
+    #     return Response(status=status.HTTP_204_NO_CONTENT, data={'msg': '删除成功！'})
