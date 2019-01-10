@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import ListCreateAPIView
+from rest_framework.pagination import LimitOffsetPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django.db.models import Count, F
@@ -166,14 +167,21 @@ class FindDuplicateFileName(APIView):
         # 查询病理号出现的次数大于1的记录
         dup_file_name = Case.objects.filter(is_delete=False).values('pathology').annotate(
             dup_count=Count('pathology')).filter(dup_count__gt=1)
-        # 转换成列表
-        dup_file_name_list = list(dup_file_name)
 
-        # ----- 返回结果 ------ #
-        result_dict = {
-            "dup_file_name": dup_file_name_list
-        }
-        return Response(status=status.HTTP_200_OK, data=result_dict)
+        # 创建分页对象
+        pg = LimitOffsetPagination()
+
+        # 获取分页的数据
+        page_roles = pg.paginate_queryset(queryset=dup_file_name, request=request, view=self)
+
+        # 序列化返回
+        # 查询多条重复记录, 因此需要指定many=True, 并指定instance
+        serializer = CaseSerializer(instance=page_roles, many=True)
+
+        # 不含上一页和下一页，要手动的在url中传参limit和offset来控制第几页
+        # return Response(status=status.HTTP_200_OK, data=serializer.data)
+        # 使用get_paginated_response, 则含上一页和下一页
+        return pg.get_paginated_response(data=serializer.data)
 
 
 class SCCaseView(ListCreateAPIView):
@@ -201,6 +209,7 @@ class SCCaseView(ListCreateAPIView):
 class SUDCaseView(APIView):
     """
     get: 查询一条病例记录
+    patch: 修改一条病例记录
     delete: 删除一条病例数据
     """
 
@@ -213,6 +222,20 @@ class SUDCaseView(APIView):
 
         # 序列化返回
         serializer = CaseSerializer(case)
+        return Response(serializer.data)
+
+    def patch(self, request, pk):
+        # 根据id, 查询数据库对象
+        try:
+            diagnose = Case.objects.get(id=pk, is_delete=False)
+        except Case.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND, data={'msg': '数据不存在！'})
+
+        # 获取参数, 校验参数, 保存结果
+        serializer = CaseSerializer(diagnose, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
         return Response(serializer.data)
 
     def delete(self, request, pk):

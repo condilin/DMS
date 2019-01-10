@@ -10,9 +10,10 @@ from .models import Image
 
 class ImageSerializer(serializers.ModelSerializer):
     """查增"""
+    dup_count = serializers.CharField(read_only=True)
 
     class Meta:
         model = Image
         fields = ('id', 'pathology', 'file_name', 'resolution', 'storage_path',
                   'waveplate_source', 'is_learn', 'diagnosis_label_doctor',
-                  'diagnosis_label_zhu', 'making_way', 'scan_time')
+                  'diagnosis_label_zhu', 'making_way', 'scan_time', 'dup_count')

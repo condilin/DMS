@@ -135,7 +135,6 @@ class SUDDiagnosisView(APIView):
     """
     get: 查询一条朱博士诊断记录
     patch: 更新一条朱博士诊断记录
-    delete: 删除一条朱博士诊断记录
     """
 
     def get(self, request, pk):
@@ -163,15 +162,15 @@ class SUDDiagnosisView(APIView):
 
         return Response(serializer.data)
 
-    def delete(self, request, pk):
-        # 根据id, 查询数据库对象
-        try:
-            diagnose = Diagnosis.objects.get(id=pk, is_delete=False)
-        except Diagnosis.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND, data={'msg': '数据不存在！'})
-
-        # 逻辑删除, .save方法适合于单条记录的保存, 而.update方法适用于批量数据的保存
-        diagnose.is_delete = True
-        diagnose.save()
-
-        return Response(status=status.HTTP_204_NO_CONTENT, data={'msg': '删除成功！'})
+    # def delete(self, request, pk):
+    #     # 根据id, 查询数据库对象
+    #     try:
+    #         diagnose = Diagnosis.objects.get(id=pk, is_delete=False)
+    #     except Diagnosis.DoesNotExist:
+    #         return Response(status=status.HTTP_404_NOT_FOUND, data={'msg': '数据不存在！'})
+    #
+    #     # 逻辑删除, .save方法适合于单条记录的保存, 而.update方法适用于批量数据的保存
+    #     diagnose.is_delete = True
+    #     diagnose.save()
+    #
+    #     return Response(status=status.HTTP_204_NO_CONTENT, data={'msg': '删除成功！'})

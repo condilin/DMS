@@ -135,7 +135,6 @@ class SUDRenameView(APIView):
     """
     get: 查询一条更名记录
     patch: 更新一条更名记录
-    delete: 删除一条更名记录
     """
 
     def get(self, request, pk):
@@ -163,15 +162,15 @@ class SUDRenameView(APIView):
 
         return Response(serializer.data)
 
-    def delete(self, request, pk):
-        # 根据id, 查询数据库对象
-        try:
-            image = FileRenameRecord.objects.get(id=pk, is_delete=False)
-        except FileRenameRecord.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND, data={'msg': '数据不存在！'})
-
-        # 逻辑删除, .save方法适合于单条记录的保存, 而.update方法适用于批量数据的保存
-        image.is_delete = True
-        image.save()
-
-        return Response(status=status.HTTP_204_NO_CONTENT, data={'msg': '删除成功！'})
+    # def delete(self, request, pk):
+    #     # 根据id, 查询数据库对象
+    #     try:
+    #         image = FileRenameRecord.objects.get(id=pk, is_delete=False)
+    #     except FileRenameRecord.DoesNotExist:
+    #         return Response(status=status.HTTP_404_NOT_FOUND, data={'msg': '数据不存在！'})
+    #
+    #     # 逻辑删除, .save方法适合于单条记录的保存, 而.update方法适用于批量数据的保存
+    #     image.is_delete = True
+    #     image.save()
+    #
+    #     return Response(status=status.HTTP_204_NO_CONTENT, data={'msg': '删除成功！'})

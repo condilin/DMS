@@ -10,9 +10,10 @@ from .models import Case
 
 class CaseSerializer(serializers.ModelSerializer):
     """查增"""
+    dup_count = serializers.CharField(read_only=True)
 
     class Meta:
         model = Case
         fields = ('id', 'pathology', 'diagnosis_label_doctor', 'waveplate_source',
                   'making_way', 'check_date', 'diagnosis_date', 'last_menstruation',
-                  'clinical_observed')
+                  'clinical_observed', 'dup_count')
