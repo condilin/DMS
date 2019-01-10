@@ -126,7 +126,7 @@ class SCDiagnosisView(ListCreateAPIView):
     # SearchFilter对应search_fields，对应模糊查询
     filter_backends = [OrderingFilter, DjangoFilterBackend, SearchFilter]
     # 默认指定按哪个字段进行排序
-    ordering = ('pathology',)
+    ordering_fields = ('pathology',)
     # 指定可以被搜索字段, 如在路由中通过?id=2查询id为2的记录
     filter_fields = ('id', 'pathology')
 
