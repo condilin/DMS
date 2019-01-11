@@ -16,6 +16,7 @@ from DMS.settings.dev import DATA_SAMBA_IMAGE_LOCATE, DATA_SAMBA_PREX, TRASH_FIL
 from Image.models import Image
 from Image.serializers import ImageSerializer
 from Case.models import Case
+from Diagnosis.models import Diagnosis
 
 
 class StatisticView(APIView):
@@ -249,10 +250,17 @@ class UpdateDataBase(APIView):
                                 diagnosis_label_doctor = None
                                 waveplate_source = None
                                 making_way = None
+                            # --------------------- 朱博士最新诊断标签 --------------------- #
+                            try:
+                                diagnosis_label_zhu = Diagnosis.objects.get(pathology=pathology).diagnosis_label_lastest
+                            except Exception as e:
+                                diagnosis_label_zhu = None
+
                             # 创建一条记录对象, 并添加到列表
                             queryset_list.append(Image(pathology=pathology, file_name=file_name,
                                                        storage_path=root, resolution=resolution,
                                                        diagnosis_label_doctor=diagnosis_label_doctor,
+                                                       diagnosis_label_zhu=diagnosis_label_zhu,
                                                        waveplate_source=waveplate_source, making_way=making_way,
                                                        scan_time=scan_time))
 
