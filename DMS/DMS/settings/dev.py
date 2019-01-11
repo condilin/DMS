@@ -186,12 +186,22 @@ REST_FRAMEWORK = {
 
 # ------------------------------ 自定义参数设置 ------------------------------ #
 
-# 移动大图到垃圾文件夹的目录
+# 本机中的data_samba的路径
 DATA_SAMBA_PREX = '/run/user/1000/gvfs/smb-share:server=192.168.2.221,share=data_samba'
+
+# 移动大图到垃圾文件夹的目录
 TRASH_FILE_PATH = 'TMP/IMAGE_GARBAGE'
 
-# data_samba服务器中存储大图的目录
-DATA_SAMBA_IMAGE_LOCATE = '/run/user/1000/gvfs/smb-share:server=192.168.2.221,share=data_samba/DATA/0TIFF'
+# 大图存储路径
+DATA_SAMBA_IMAGE_LOCATE = 'DATA/0TIFF'
+
+# 训练数据存储路径
+# batch6
+BATCH6_CELLS_PATH = 'DATA/4TRAIN_DATA/20181201_BATCH_6/CELLS'
+BATCH6_XMLS_PATH = 'DATA/4TRAIN_DATA/20181201_BATCH_6/XMLS'
+# batch6.1
+BATCH6_1_CELLS_PATH = 'DATA/4TRAIN_DATA/20181205_BATCH_6.1/CELLS'
+BATCH6_1_XMLS_PATH = 'DATA/4TRAIN_DATA/20181216_BATCH_6.1/XMLS_CHECKED'
 
 
 # ------------------------------ 配置上传及下载excel格式的插件 ------------------------------ #

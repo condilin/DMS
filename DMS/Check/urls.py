@@ -8,6 +8,7 @@ from django.conf.urls import url
 from . import views
 
 urlpatterns = [
+    url(r'^checks/updates/$', views.UpdateCheck.as_view()),  # 更新审核数据记录
     url(r'^checks/(?P<pk>\d+)/$', views.SUDCheckView.as_view()),  # 查询/更新/删除
     url(r'^checks/$', views.SCCheckView.as_view()),  # 查询/新增
 ]

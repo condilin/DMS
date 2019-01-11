@@ -198,7 +198,7 @@ class UpdateDataBase(APIView):
         start_time = time.time()
 
         # 获取请求体数据
-        update_type = request.POST.get('update_type', None)
+        update_type = request.GET.get('update_type', None)
         if update_type != 'db':
             return Response(status=status.HTTP_403_FORBIDDEN, data={'msg': '请求参数错误！'})
 
@@ -219,7 +219,8 @@ class UpdateDataBase(APIView):
                 queryset_list = []
                 # 遍历0TIFF目录,获取信息,并保存到数据库
                 for resolution in ['20X', '40X']:
-                    for root, dirs, files in os.walk(os.path.join(DATA_SAMBA_IMAGE_LOCATE, resolution), topdown=False):
+                    for root, dirs, files in os.walk(
+                            os.path.join(DATA_SAMBA_PREX, DATA_SAMBA_IMAGE_LOCATE, resolution), topdown=False):
                         # 只遍历文件夹下的所有文件
                         for name in files:
                             # --------------------- 文件名 --------------------- #
@@ -260,7 +261,6 @@ class UpdateDataBase(APIView):
                 Image.objects.bulk_create(queryset_list)
 
             except Exception as e:
-                # 回滚
                 transaction.savepoint_rollback(save_id)
                 return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data={'msg': '数据保存到数据库失败！'})
 

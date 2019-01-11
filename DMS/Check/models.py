@@ -8,7 +8,7 @@ class Check(models.Model):
     check_version_number = models.CharField(max_length=64, verbose_name=u'审核版本号', null=True, blank=True)
     cells_number = models.IntegerField(verbose_name='细胞数量', default=0)
     class_number = models.IntegerField(verbose_name='分类数量', default=0)
-    classify = models.CharField(max_length=512, verbose_name=u'分类', null=True, blank=True)
+    classify = models.CharField(max_length=256, verbose_name=u'分类', null=True, blank=True)
     storage_path = models.CharField(max_length=128, verbose_name=u'存储路径', null=True, blank=True)
     image_format = models.CharField(max_length=64, verbose_name=u'图像格式', null=True, blank=True)
     source = models.CharField(max_length=128, verbose_name=u'数据来源', null=True, blank=True)
@@ -44,4 +44,4 @@ class CheckDetail(models.Model):
         verbose_name_plural = verbose_name
 
     def __str__(self):
-        return '大图的名称为: %s' % self.image
+        return '大图的名称: %s' % self.image

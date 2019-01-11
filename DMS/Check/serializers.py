@@ -14,4 +14,4 @@ class CheckSerializer(serializers.ModelSerializer):
     class Meta:
         model = Check
         fields = ('id', 'check_version_number', 'cells_number', 'class_number',
-                  'image_format', 'source')
+                  'classify', 'storage_path', 'image_format', 'source')

@@ -4,9 +4,99 @@ from rest_framework.views import APIView
 from rest_framework.generics import ListCreateAPIView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
+from django.db import transaction
+
+import os
+import time
+import xml.dom.minidom
+from DMS.settings.dev import DATA_SAMBA_PREX, BATCH6_XMLS_PATH, BATCH6_1_XMLS_PATH, \
+    BATCH6_CELLS_PATH, BATCH6_1_CELLS_PATH
 
 from Check.models import Check
 from Check.serializers import CheckSerializer
+
+
+class UpdateCheck(APIView):
+    """
+    post: 更新审核数据记录列表
+    :parameter:
+        update_type: 指定更新审核版本列表还是详细列表, 可选值为：sample/detail
+    :example:
+        /api/v1/checks/updates/?update_type=sample
+    """
+
+    def post(self, request):
+
+        start_time = time.time()
+
+        update_type = request.GET.get('update_type', None)
+        if update_type not in ['sample', 'detail']:
+            return Response(status=status.HTTP_403_FORBIDDEN, data={'msg': '请求参数错误！'})
+
+        # 存储所有XML/CELLS的版本号及路径
+        version_list = [
+            ('BATCH6', os.path.join(DATA_SAMBA_PREX, BATCH6_CELLS_PATH), os.path.join(DATA_SAMBA_PREX, BATCH6_XMLS_PATH)),
+            ('BATCH6.1', os.path.join(DATA_SAMBA_PREX, BATCH6_1_CELLS_PATH), os.path.join(DATA_SAMBA_PREX, BATCH6_1_XMLS_PATH))
+        ]
+
+        # 开启事务
+        with transaction.atomic():
+            # 创建保存点
+            save_id = transaction.savepoint()
+
+            try:
+                # 删除表中没有逻辑删除的记录,那些已逻辑删除的要保存记录下来
+                Check.objects.filter(is_delete=False).delete()
+
+                # 获取图像格式
+                for version_num, cells_version_path, xml_version_path in version_list:
+                    # 存储该版本所有图像的后缀格式
+                    suffx_list = []
+                    # 存储路径
+                    storage_path = xml_version_path.split('=')[2]
+                    for file_name in os.listdir(xml_version_path):
+                        # 获取文件对象
+                        dom_obj = xml.dom.minidom.parse(os.path.join(xml_version_path, file_name))
+                        # 获取元素对象
+                        element_obj = dom_obj.documentElement
+                        # 使用元素对象获取各个标签
+                        # 通过Annotations标签获取大图全名(结果返回一个列表对象)
+                        big_image_element_obj = element_obj.getElementsByTagName('Annotations')
+                        # 获取属性值
+                        image_full_name = big_image_element_obj[0].getAttribute('FullName')
+                        suffx_list.append(os.path.splitext(image_full_name)[1])
+
+                    # 图像格式
+                    image_format_set = set(suffx_list)
+                    image_format = ', '.join(image_format_set).replace('.', '')
+
+                    # 所有图像列表
+                    image_list = []
+                    # 所有细胞分类列表
+                    cells_classify_list = []
+                    for cla in os.listdir(cells_version_path):
+                        for image in os.listdir(os.path.join(cells_version_path, cla)):
+                            image_list.append(image)
+                        cells_classify_list.append(cla)
+
+                    # 分类
+                    classify = ', '.join(cells_classify_list)
+
+                    # 创建一条记录
+                    Check.objects.create(check_version_number=version_num, storage_path=storage_path,
+                                         class_number=len(cells_classify_list), cells_number=len(image_list),
+                                         image_format=image_format, classify=classify)
+
+                end_time = time.time()
+                cost_time = '%.2f' % (end_time - start_time)
+            except Exception as e:
+                transaction.savepoint_rollback(save_id)
+                return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data={'msg': '审核数据更新失败！'})
+
+            # 提交事务
+            transaction.savepoint_commit(save_id)
+
+            return Response(status=status.HTTP_201_CREATED, data={'msg': '审核版本数据更新成功！', 'cost_time': cost_time})
 
 
 class SCCheckView(ListCreateAPIView):
