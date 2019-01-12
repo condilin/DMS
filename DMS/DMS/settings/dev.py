@@ -118,7 +118,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'DMS.wsgi.application'
 
 
-# Database
+# ------------------------------ 数据库相关配置 ------------------------------ #
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
 
 DATABASES = {
@@ -132,6 +132,10 @@ DATABASES = {
         'PORT': 3306,
     }
 }
+
+# ------------------------------ 配置上传时文件保存的数据库引擎 ------------------------------ #
+UPLOAD_DB_ENGINE = 'mysql+mysqldb://root:kyfq@localhost:3306/dms?charset=utf8'
+
 
 # Password validation
 # https://docs.djangoproject.com/en/2.1/ref/settings/#auth-password-validators
@@ -152,6 +156,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+# ------------------------------ 时间时区相关配置 ------------------------------ #
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/
 
@@ -203,8 +208,7 @@ BATCH6_XMLS_PATH = 'DATA/4TRAIN_DATA/20181201_BATCH_6/XMLS'
 BATCH6_1_CELLS_PATH = 'DATA/4TRAIN_DATA/20181205_BATCH_6.1/CELLS'
 BATCH6_1_XMLS_PATH = 'DATA/4TRAIN_DATA/20181216_BATCH_6.1/XMLS_CHECKED'
 
-
-# ------------------------------ 配置上传及下载excel格式的插件 ------------------------------ #
+# ------------------------------ 配置下载excel格式的插件 ------------------------------ #
 
 FILE_UPLOAD_HANDLERS = ("django_excel.ExcelMemoryFileUploadHandler",
                         "django_excel.TemporaryExcelFileUploadHandler",)

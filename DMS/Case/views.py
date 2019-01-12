@@ -12,6 +12,7 @@ import os
 import time
 import pandas as pd
 from sqlalchemy import create_engine
+from DMS.settings.dev import UPLOAD_DB_ENGINE
 import django_excel as excel
 from DMS.utils.uploads import save_upload_file
 
@@ -74,7 +75,7 @@ class UploadFile(APIView):
                 Case.objects.filter(is_delete=False).delete()
 
                 # 将数据写入mysql的数据库，但需要先通过sqlalchemy.create_engine建立连接,且字符编码设置为utf8，否则有些latin字符不能处理
-                con = create_engine('mysql+mysqldb://root:kyfq@localhost:3306/dms?charset=utf8')
+                con = create_engine(UPLOAD_DB_ENGINE)
                 # chunksize:
                 # 如果data的数据量太大，数据库无法响应可能会报错，这时候就可以设置chunksize，比如chunksize = 1000，data就会一次1000的循环写入数据库。
                 # if_exists:
