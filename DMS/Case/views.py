@@ -119,8 +119,10 @@ class DownloadFile(APIView):
             'c1_病理号', 'c2_医生诊断', 'c3_片源', 'c4_切片制式', 'c5_采样_检查时间',
             'c6_诊断时间', 'c7_末次经期时间', 'c8_临床所见')
 
+        # 命名返回文件名字
+        file_name_add_date = '病例信息_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
         # 返回对应格式的文件
-        return excel.make_response_from_records(case_data, file_type=suffix_name, file_name='病例信息')
+        return excel.make_response_from_records(case_data, file_type=suffix_name, file_name=file_name_add_date)
 
 
 class DownloadDuplicateName(APIView):
@@ -154,8 +156,10 @@ class DownloadDuplicateName(APIView):
             'c1_病理号', 'c2_医生诊断', 'c3_片源', 'c4_切片制式', 'c5_采样_检查时间',
             'c6_诊断时间', 'c7_末次经期时间', 'c8_临床所见')
 
+        # 命名返回文件名字
+        file_name_add_date = '重复病理号记录_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
         # 返回对应格式的文件
-        return excel.make_response_from_records(duplicate_case_data, file_type=suffix_name, file_name='病例信息')
+        return excel.make_response_from_records(duplicate_case_data, file_type=suffix_name, file_name=file_name_add_date)
 
 
 class FindDuplicateFileName(APIView):

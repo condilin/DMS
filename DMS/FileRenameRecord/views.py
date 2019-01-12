@@ -5,11 +5,12 @@ from rest_framework.generics import ListCreateAPIView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, F
 
 import os
 import time
 import pandas as pd
+import django_excel as excel
 from sqlalchemy import create_engine
 from DMS.utils.uploads import save_upload_file
 
@@ -88,6 +89,40 @@ class UploadFile(APIView):
             transaction.savepoint_commit(save_id)
 
             return Response(status=status.HTTP_201_CREATED, data={"msg": '上传成功！'})
+
+
+class DownloadFile(APIView):
+    """
+    get: 导出csv/excel数据
+    :parameter:
+        type: 指定下载的格式, csv/xlsx/xls
+    :example:
+        /api/v1/renames/downloads/?type=csv
+    """
+
+    def get(self, request):
+
+        suffix_name = request.GET.get('type', None)
+        if not suffix_name:
+            return Response(status=status.HTTP_403_FORBIDDEN, data={'msg': '请求参数错误！'})
+
+        if suffix_name not in ['csv', 'xlsx', 'xls']:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={'msg': '仅支持下载csv和excel格式！'})
+
+        # 通过指定字段的别名, 指定返回的格式顺序, 下载时默认按字母进行排序
+        img_data = FileRenameRecord.objects.filter(is_delete=False).annotate(
+            c1_病理号=F('pathology'), c2_当前文件名=F('current_file_name'),
+            c3_历史曾用名1=F('his_name1'), c4_历史曾用名2=F('his_name2'),
+            c5_历史曾用名3=F('his_name3'), c6_历史曾用名4=F('his_name4'),
+            c7_历史曾用名5=F('his_name5')).values(
+            'c1_病理号', 'c2_当前文件名', 'c3_历史曾用名1', 'c4_历史曾用名2',
+            'c5_历史曾用名3', 'c6_历史曾用名4', 'c7_历史曾用名5')
+
+        # 命名返回文件名字
+        file_name_add_date = '文件更名记录_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
+        # 返回对应格式的文件
+        return excel.make_response_from_records(img_data, file_type=suffix_name, file_name=file_name_add_date)
+
 
 
 class FindDuplicateFileName(APIView):

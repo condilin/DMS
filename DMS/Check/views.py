@@ -18,18 +18,19 @@ from Check.serializers import CheckSerializer
 
 class UpdateCheck(APIView):
     """
-    post: 更新审核数据记录列表
+    post: 更新审核数据记录列表/详情信息
     :parameter:
         update_type: 指定更新审核版本列表还是详细列表, 可选值为：sample/detail
     :example:
-        /api/v1/checks/updates/?update_type=sample
+        请求体中带上 {“update_type”: “sample”}
     """
 
     def post(self, request):
 
         start_time = time.time()
 
-        update_type = request.GET.get('update_type', None)
+        # 获取请求体数据
+        update_type = request.POST.get('update_type', None)
         if update_type not in ['sample', 'detail']:
             return Response(status=status.HTTP_403_FORBIDDEN, data={'msg': '请求参数错误！'})
 
@@ -52,8 +53,8 @@ class UpdateCheck(APIView):
                 for version_num, cells_version_path, xml_version_path in version_list:
                     # 存储该版本所有图像的后缀格式
                     suffx_list = []
-                    # 存储路径
-                    storage_path = xml_version_path.split('=')[2]
+                    # 细胞的存储路径
+                    storage_path = cells_version_path.split('=')[2]
                     for file_name in os.listdir(xml_version_path):
                         # 获取文件对象
                         dom_obj = xml.dom.minidom.parse(os.path.join(xml_version_path, file_name))

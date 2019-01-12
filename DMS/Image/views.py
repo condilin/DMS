@@ -165,8 +165,10 @@ class DownloadFile(APIView):
             'c1_病理号', 'c2_文件名', 'c3_分辨率', 'c4_存储路径', 'c5_片源',
             'c6_切片制式', 'c7_是否学习', 'c8_医生诊断标签', 'c9_朱博士诊断标签')
 
+        # 命名返回文件名字
+        file_name_add_date = '大图信息_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
         # 返回对应格式的文件
-        return excel.make_response_from_records(img_data, file_type=suffix_name, file_name='大图信息')
+        return excel.make_response_from_records(img_data, file_type=suffix_name, file_name=file_name_add_date)
 
 
 class UpdateDataBase(APIView):
@@ -199,7 +201,7 @@ class UpdateDataBase(APIView):
         start_time = time.time()
 
         # 获取请求体数据
-        update_type = request.GET.get('update_type', None)
+        update_type = request.POST.get('update_type', None)
         if update_type != 'db':
             return Response(status=status.HTTP_403_FORBIDDEN, data={'msg': '请求参数错误！'})
 

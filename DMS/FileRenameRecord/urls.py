@@ -8,7 +8,8 @@ from django.conf.urls import url
 from . import views
 
 urlpatterns = [
-    url(r'^renames/uploads/$', views.UploadFile.as_view()),  # 上传大图数据文件
+    url(r'^renames/uploads/$', views.UploadFile.as_view()),  # 上传文件更名记录数据文件
+    url(r'^renames/downloads/$', views.DownloadFile.as_view()),  # 下传朱博士诊断标签数据文件
     url(r'^renames/duplicates/$', views.FindDuplicateFileName.as_view()),  # 查找重复的文件名以及重复的次数
     url(r'^renames/(?P<pk>\d+)/$', views.SUDRenameView.as_view()),  # 查询/更新/删除
     url(r'^renames/$', views.SCRenameView.as_view()),  # 查询/新增
