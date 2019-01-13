@@ -114,10 +114,9 @@ class DownloadFile(APIView):
         img_data = Diagnosis.objects.filter(is_delete=False).annotate(
             c1_病理号=F('pathology'), c2_最新诊断标签=F('diagnosis_label_lastest'),
             c3_历史诊断标签1=F('his_diagnosis_label1'), c4_历史诊断标签2=F('his_diagnosis_label2'),
-            c5_历史诊断标签3=F('his_diagnosis_label3'), c6_历史诊断标签4=F('his_diagnosis_label4'),
-            c7_历史诊断标签5=F('his_diagnosis_label5')).values(
+            c5_历史诊断标签3=F('his_diagnosis_label3'), c6_历史诊断标签4=F('his_diagnosis_label4')).values(
             'c1_病理号', 'c2_最新诊断标签', 'c3_历史诊断标签1', 'c4_历史诊断标签2',
-            'c5_历史诊断标签3', 'c6_历史诊断标签4', 'c7_历史诊断标签5')
+            'c5_历史诊断标签3', 'c6_历史诊断标签4')
 
         # 命名返回文件名字
         file_name_add_date = '朱博士诊断信息_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
