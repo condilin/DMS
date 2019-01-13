@@ -5,9 +5,11 @@ from rest_framework.generics import ListCreateAPIView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django.db import transaction
+from django.db.models import F
 
 import os
 import time
+import django_excel as excel
 from collections import Counter
 import xml.dom.minidom
 from DMS.settings.dev import DATA_SAMBA_PREX, BATCH6_XMLS_PATH, BATCH6_1_XMLS_PATH, \
@@ -15,6 +17,35 @@ from DMS.settings.dev import DATA_SAMBA_PREX, BATCH6_XMLS_PATH, BATCH6_1_XMLS_PA
 
 from Check.models import Check, CheckDetail
 from Check.serializers import CheckSerializer
+
+
+class DownloadFile(APIView):
+    """
+    get: 导出审核版本数据训练详情csv/excel数据
+    :parameter:
+        type: 指定下载的格式, csv/xlsx/xls
+    :example:
+        /api/v1/checks/downloads/?type=csv
+    """
+
+    def get(self, request):
+
+        suffix_name = request.GET.get('type', None)
+        if not suffix_name:
+            return Response(status=status.HTTP_403_FORBIDDEN, data={'msg': '请求参数错误！'})
+
+        if suffix_name not in ['csv', 'xlsx', 'xls']:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={'msg': '仅支持下载csv和excel格式！'})
+
+        # 通过指定字段的别名, 指定返回的格式顺序, 下载时默认按字母进行排序
+        img_data = CheckDetail.objects.filter(is_delete=False).annotate(
+            c1_大图名称=F('image'), c2_分类标签=F('classify'),
+            c3_数量=F('class_number')).values('c1_大图名称', 'c2_分类标签', 'c3_数量')
+
+        # 命名返回文件名字
+        file_name_add_date = '训练详情信息_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
+        # 返回对应格式的文件
+        return excel.make_response_from_records(img_data, file_type=suffix_name, file_name=file_name_add_date)
 
 
 class UpdateCheck(APIView):

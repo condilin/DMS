@@ -31,8 +31,8 @@ class CheckDetail(models.Model):
 
     id = models.AutoField(primary_key=True, verbose_name=u'唯一主键')
     image = models.CharField(max_length=64, verbose_name=u'大图名称', null=True, blank=True)
-    classify = models.CharField(max_length=32, verbose_name=u'分类', null=True, blank=True)
-    class_number = models.IntegerField(verbose_name='分类数量', default=0)
+    classify = models.CharField(max_length=32, verbose_name=u'分类标签', null=True, blank=True)
+    class_number = models.IntegerField(verbose_name='数量', default=0)
 
     is_delete = models.BooleanField(verbose_name=u'是否逻辑删除', default=False)
     create_time = models.DateTimeField(verbose_name=u'创建时间', auto_now_add=True)
