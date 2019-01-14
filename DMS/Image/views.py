@@ -119,7 +119,7 @@ class FindDuplicateFileName(APIView):
     def get(self, request):
         # 查询（文件名和倍数）分组，查找出现的次数大于1的记录
         dup_file_name = Image.objects.filter(is_delete=False).values('file_name', 'resolution').annotate(
-            dup_count=Count('file_name', 'resolution')).filter(dup_count__gt=1)
+            dup_count=Count('id')).filter(dup_count__gt=1).order_by('-dup_count')
 
         # 创建分页对象
         pg = LimitOffsetPagination()

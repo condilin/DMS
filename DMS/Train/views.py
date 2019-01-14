@@ -157,8 +157,8 @@ class SCTrainView(ListCreateAPIView):
 
 class SUDTrainView(APIView):
     """
-    get: 查询一条朱博士诊断记录
-    patch: 更新一条朱博士诊断记录
+    get: 查询一条训练数据记录
+    patch: 更新一条训练数据记录
     """
 
     def get(self, request, pk):

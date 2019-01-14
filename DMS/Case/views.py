@@ -171,7 +171,7 @@ class FindDuplicateFileName(APIView):
     def get(self, request):
         # 查询病理号出现的次数大于1的记录
         dup_file_name = Case.objects.filter(is_delete=False).values('pathology').annotate(
-            dup_count=Count('pathology')).filter(dup_count__gt=1)
+            dup_count=Count('pathology')).filter(dup_count__gt=1).order_by('-dup_count')
 
         # 创建分页对象
         pg = LimitOffsetPagination()
