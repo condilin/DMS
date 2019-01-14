@@ -8,24 +8,27 @@ class Train(models.Model):
     # 基本数据
     train_version = models.CharField(max_length=32, verbose_name=u'训练数据版本', null=True, blank=True)
     train_dataset = models.CharField(max_length=32, verbose_name=u'训练数据集', null=True, blank=True)
-    cells_classify_num = models.IntegerField(verbose_name=u'细胞分类数量', default=0)
-    dataset_cells_num = models.IntegerField(verbose_name=u'原始数据集细胞数量', default=0)
+    cells_classify_num = models.CharField(max_length=4, verbose_name=u'细胞分类数量', null=True, blank=True)
+    dataset_cells_num = models.CharField(max_length=16, verbose_name=u'原始数据集细胞数量', null=True, blank=True)
     weight = models.CharField(max_length=64, verbose_name=u'使用的权重', null=True, blank=True)
     target_model = models.CharField(max_length=128, verbose_name=u'目标模型', null=True, blank=True)
     # 数据预处理
     saturation = models.CharField(max_length=32, verbose_name=u'饱和度', null=True, blank=True)
     lightness = models.CharField(max_length=32, verbose_name=u'亮度', null=True, blank=True)
     rotation = models.CharField(max_length=32, verbose_name=u'旋转', null=True, blank=True)
-
-
-    diagnosis_label_doctor = models.CharField(max_length=64, verbose_name=u'医生诊断标签', null=True, blank=True)
-    waveplate_source = models.CharField(max_length=64, verbose_name=u'片源', null=True, blank=True)
-    making_way = models.CharField(max_length=64, verbose_name=u'切片制式', null=True, blank=True)
-    check_date = models.CharField(max_length=128, verbose_name=u'采样/检查时间', blank=True, null=True)
-    diagnosis_date = models.CharField(max_length=128, verbose_name=u"诊断时间", blank=True, null=True)
-    last_menstruation = models.CharField(max_length=128, verbose_name=u'末次经期时间', blank=True, null=True)
-    clinical_observed = models.CharField(max_length=256, verbose_name=u"临床所见", null=True, blank=True)
-    diagnosis_label_doctor_filter = models.CharField(max_length=64, verbose_name=u'医生诊断标签筛选', null=True, blank=True)
+    padding = models.CharField(max_length=16, verbose_name=u'贴边', null=True, blank=True)
+    size = models.CharField(max_length=32, verbose_name=u'尺寸', null=True, blank=True)
+    background = models.CharField(max_length=128, verbose_name=u'背景', null=True, blank=True)
+    # 训练
+    init_lr = models.CharField(max_length=128, verbose_name=u'初始学习率', null=True, blank=True)
+    decay = models.CharField(max_length=128, verbose_name=u'衰减率', null=True, blank=True)
+    epoch = models.CharField(max_length=8, verbose_name=u'轮数', null=True, blank=True)
+    batch = models.CharField(max_length=8, verbose_name=u'批数', null=True, blank=True)
+    final_step = models.CharField(max_length=16, verbose_name=u'训练步数', null=True, blank=True)
+    # 验证表现最好的结果
+    loss = models.FloatField(max_length=16, verbose_name='损失', null=True, blank=True)
+    accuracy = models.FloatField(max_length=16, verbose_name='准确率', null=True, blank=True)
+    best_epoch = models.CharField(max_length=8, verbose_name=u'最好的轮数', null=True, blank=True)
 
     is_delete = models.BooleanField(verbose_name='是否逻辑删除', default=False)
     create_time = models.DateTimeField(verbose_name=u'创建时间', auto_now_add=True)
