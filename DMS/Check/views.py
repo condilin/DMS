@@ -185,7 +185,8 @@ class UpdateCheck(APIView):
                             for k, v in cells_count_dict.items():
                                 # 创建一条记录对象, 并添加到列表
                                 queryset_list.append(
-                                    CheckDetail(image=image_name, classify=k, class_number=v)
+                                    CheckDetail(check_version_number=version_num,
+                                                image=image_name, classify=k, class_number=v)
                                 )
 
                     # 每次save()的时候都会访问一次数据库，导致性能问题。

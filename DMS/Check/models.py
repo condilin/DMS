@@ -30,6 +30,7 @@ class CheckDetail(models.Model):
     """训练详情"""
 
     id = models.AutoField(primary_key=True, verbose_name=u'唯一主键')
+    check_version_number = models.CharField(max_length=64, verbose_name=u'审核版本号', null=True, blank=True)
     image = models.CharField(max_length=64, verbose_name=u'大图名称', null=True, blank=True)
     classify = models.CharField(max_length=32, verbose_name=u'分类标签', null=True, blank=True)
     class_number = models.IntegerField(verbose_name='数量', default=0)
