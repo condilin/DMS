@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.generics import ListCreateAPIView
 from rest_framework.pagination import LimitOffsetPagination
 from django_filters.rest_framework import DjangoFilterBackend
+from django_filters import FilterSet, CharFilter
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django.db.models import Count, F
 from django.db import transaction
@@ -193,6 +194,17 @@ class FindDuplicateFileName(APIView):
         return pg.get_paginated_response(data=serializer.data)
 
 
+class CaseFilter(FilterSet):
+    """搜索类"""
+
+    pathology = CharFilter(lookup_expr='icontains')  # 模糊查询（包含），并且忽略大小写
+    diagnosis_label_doctor = CharFilter(lookup_expr='iexact')  # 精确匹配
+
+    class Meta:
+        model = Case
+        fields = ['pathology', 'diagnosis_label_doctor']
+
+
 class SCCaseView(ListCreateAPIView):
     """
     get: 查询病例记录列表
@@ -211,8 +223,8 @@ class SCCaseView(ListCreateAPIView):
     filter_backends = [OrderingFilter, DjangoFilterBackend, SearchFilter]
     # 默认指定按哪个字段进行排序
     ordering_fields = ('pathology',)
-    # 指定可以被搜索字段, 如在路由中通过?id=2查询id为2的记录
-    filter_fields = ('id', 'pathology', 'diagnosis_label_doctor')
+    # 指定可以被搜索字段
+    filter_class = CaseFilter
 
 
 class SUDCaseView(APIView):
