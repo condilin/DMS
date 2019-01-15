@@ -402,3 +402,4 @@ class SUDImageView(APIView):
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data={'msg': '数据库删除失败！'})
 
         return Response(status=status.HTTP_204_NO_CONTENT, data={'msg': '删除成功！'})
+

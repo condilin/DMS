@@ -223,3 +223,4 @@ class SUDDiagnosisView(APIView):
     #     diagnose.save()
     #
     #     return Response(status=status.HTTP_204_NO_CONTENT, data={'msg': '删除成功！'})
+
