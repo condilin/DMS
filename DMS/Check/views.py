@@ -18,6 +18,9 @@ from DMS.settings.dev import DATA_SAMBA_PREX, BATCH6_XMLS_PATH, BATCH6_1_XMLS_PA
 from Check.models import Check, CheckDetail
 from Check.serializers import CheckSerializer
 
+import logging
+logger = logging.getLogger('django')
+
 
 class DownloadFile(APIView):
     """
@@ -129,6 +132,7 @@ class UpdateCheck(APIView):
                     end_time = time.time()
                     cost_time = '%.2f' % (end_time - start_time)
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data={'msg': '审核数据更新失败！'})
 
@@ -196,6 +200,7 @@ class UpdateCheck(APIView):
                     end_time = time.time()
                     cost_time = '%.2f' % (end_time - start_time)
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data={'msg': '审核版本详情数据更新失败！'})
 

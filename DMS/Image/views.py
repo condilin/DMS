@@ -18,6 +18,9 @@ from Image.serializers import ImageSerializer
 from Case.models import Case
 from Diagnosis.models import Diagnosis
 
+import logging
+logger = logging.getLogger('django')
+
 
 class StatisticView(APIView):
     """
@@ -271,6 +274,7 @@ class UpdateDataBase(APIView):
                 Image.objects.bulk_create(queryset_list)
 
             except Exception as e:
+                logger.error(e)
                 transaction.savepoint_rollback(save_id)
                 return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data={'msg': '数据保存到数据库失败！'})
 

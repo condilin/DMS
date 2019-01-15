@@ -19,6 +19,9 @@ from DMS.utils.uploads import save_upload_file
 from Case.models import Case
 from Case.serializers import CaseSerializer
 
+import logging
+logger = logging.getLogger('django')
+
 
 class UploadFile(APIView):
     """
@@ -84,6 +87,7 @@ class UploadFile(APIView):
                 # index=False，则不将dataframe中的index列保存到数据库
                 data.to_sql('tb_case_info', con, if_exists='append', index=False, chunksize=1000)
             except Exception as e:
+                logger.error(e)
                 transaction.savepoint_rollback(save_id)
                 return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data={"msg": '导入数据库失败！'})
 

@@ -18,6 +18,9 @@ from DMS.utils.uploads import save_upload_file
 from Train.models import Train
 from Train.serializers import TrainSerializer
 
+import logging
+logger = logging.getLogger('django')
+
 
 class UploadFile(APIView):
     """
@@ -85,6 +88,7 @@ class UploadFile(APIView):
                 # index=False，则不将dataframe中的index列保存到数据库
                 data.to_sql('tb_train_info', con, if_exists='append', index=False, chunksize=1000)
             except Exception as e:
+                logging.error(e)
                 transaction.savepoint_rollback(save_id)
                 return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data={"msg": '导入数据库失败！'})
 
@@ -164,23 +168,23 @@ class SUDTrainView(APIView):
     def get(self, request, pk):
         # 根据id, 查询数据库对象
         try:
-            diagnose = Train.objects.get(id=pk, is_delete=False)
+            train = Train.objects.get(id=pk, is_delete=False)
         except Train.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND, data={'msg': '数据不存在！'})
 
         # 序列化返回
-        serializer = TrainSerializer(diagnose)
+        serializer = TrainSerializer(train)
         return Response(serializer.data)
 
     def patch(self, request, pk):
         # 根据id, 查询数据库对象
         try:
-            diagnose = Train.objects.get(id=pk, is_delete=False)
+            train = Train.objects.get(id=pk, is_delete=False)
         except Train.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND, data={'msg': '数据不存在！'})
 
         # 获取参数, 校验参数, 保存结果
-        serializer = TrainSerializer(diagnose, data=request.data)
+        serializer = TrainSerializer(train, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
