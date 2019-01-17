@@ -141,7 +141,7 @@ class DownloadFile(APIView):
 class TrainFilter(FilterSet):
     """搜索类"""
 
-    train_version = CharFilter(lookup_expr='iexact')  # 精确搜索
+    train_version = CharFilter(lookup_expr='icontains')  # 模糊搜索
 
     class Meta:
         model = Train
