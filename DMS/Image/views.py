@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView, ListCreateAPIView
 from rest_framework.pagination import LimitOffsetPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import FilterSet, CharFilter
@@ -234,6 +234,8 @@ class UpdateDataBase(APIView):
                             file_name, suffix_name = os.path.splitext(name)
                             # --------------------- 病理号 --------------------- #
                             pathology = self.rename_file_name(file_name)
+                            # --------------------- 存储路径 --------------------- #
+                            storage_path = root.split('=')[2]
                             # --------------- 文件创建时间（扫描时间）------------------ #
                             file_create_time_ts = os.path.getctime(os.path.join(root, name))
                             scan_time = self.timestamp_to_time(file_create_time_ts)
@@ -264,7 +266,7 @@ class UpdateDataBase(APIView):
 
                             # 创建一条记录对象, 并添加到列表
                             queryset_list.append(Image(pathology=pathology, file_name=file_name,
-                                                       storage_path=root, resolution=resolution,
+                                                       storage_path=storage_path, resolution=resolution,
                                                        diagnosis_label_doctor=diagnosis_label_doctor,
                                                        diagnosis_label_zhu=diagnosis_label_zhu,
                                                        waveplate_source=waveplate_source, making_way=making_way,
@@ -293,15 +295,18 @@ class ImageFilter(FilterSet):
 
     pathology = CharFilter(lookup_expr='icontains')  # 模糊查询（包含），并且忽略大小写
     file_name = CharFilter(lookup_expr='icontains')  # 模糊查询（包含），并且忽略大小写
+    resolution = CharFilter(lookup_expr='iexact')  # 精确查询
+    storage_path = CharFilter(lookup_expr='iexact')  # 精确查询
 
     class Meta:
         model = Image
-        fields = ['pathology', 'file_name']
+        fields = ['pathology', 'file_name', 'resolution', 'storage_path']
 
 
-class SImageView(ListAPIView):
+class SImageView(ListCreateAPIView):
     """
     get: 查询大图列表
+    post: 新增一条记录
     """
 
     # 指定查询集, 获取没有逻辑删除的数据
@@ -345,38 +350,12 @@ class SUDImageView(APIView):
         except Image.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND, data={'msg': '数据不存在！'})
 
-        # 获取参数
-        form_file_name = request.data.get('file_name', None)
-        form_pathology = request.data.get('pathology', None)
+        # 获取参数, 校验参数, 保存结果
+        serializer = ImageSerializer(image, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
 
-        # 保存结果
-        if form_file_name:
-            try:
-                # 更新data_samba中大图的文件名
-                image_full_path = os.path.join(image.storage_path, image.file_name + '.kfb')
-                image_rename = os.path.join(image.storage_path, form_file_name + '.kfb')
-                # shutil.move(image_full_path, image_rename)
-                # 更新数据库中大图的文件名
-                image.file_name = form_file_name
-                image.save()
-            except Exception as e:
-                return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data={'msg', '更新文件名失败！'})
-        elif form_pathology:
-            try:
-                # 判断要修改的病理号和文件名是否一样
-                if form_pathology != image.file_name:
-                    return Response(status=status.HTTP_400_BAD_REQUEST, data={'msg': '病理号与文件名不一样！'})
-                # 修改病理号
-                image.pathology = form_pathology
-                image.save()
-            except Exception as e:
-                return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data={'msg': '更新病理号失败！'})
-        else:
-            return Response(status=status.HTTP_403_FORBIDDEN, data={'msg': '参数错误, 只能修改文件名或病理号！'})
-
-        # 返回更新的那条数据
-        res = Image.objects.get(id=pk, is_delete=False)
-        return Response(status=status.HTTP_200_OK, data={'pathology': res.pathology, 'file_name': res.file_name})
+        return Response(serializer.data)
 
     def delete(self, request, pk):
         # 根据id, 查询数据库对象
@@ -386,19 +365,11 @@ class SUDImageView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND, data={'msg': '数据不存在！'})
 
         try:
-            # 在data_samba中将该大图移动到临时的文件(/TMP/GARBAGE)
-            # image_full_path = os.path.join(image.storage_path, image.file_name + '.kfb')
-            # trash_full_path = os.path.join(DATA_SAMBA_PREX, TRASH_FILE_PATH)
-            # 如果目录不存在, 则创建
-            # if not os.path.exists(trash_full_path):
-            #     os.mkdir(trash_full_path)
-            # shutil.move(image_full_path, trash_full_path)
-
             # 数据库中逻辑删除
             image.is_delete = True
             image.save()
-
         except Exception as e:
+            logger.warning(e)
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data={'msg': '数据库删除失败！'})
 
         return Response(status=status.HTTP_204_NO_CONTENT, data={'msg': '删除成功！'})
