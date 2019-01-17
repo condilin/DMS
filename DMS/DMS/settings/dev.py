@@ -198,7 +198,7 @@ DATA_SAMBA_PREX = '/run/user/1000/gvfs/smb-share:server=192.168.2.221,share=data
 TRASH_FILE_PATH = 'TMP/IMAGE_GARBAGE'
 
 # 大图存储路径
-DATA_SAMBA_IMAGE_LOCATE = 'DATA/0TIFF'
+DATA_SAMBA_IMAGE_LOCATE = 'LCT_DATA/0TIFF'
 
 # 训练数据存储路径
 # batch6
@@ -243,11 +243,14 @@ LOGGING = {
         'verbose': {
             'format': '%(levelname)s [%(asctime)s] [%(module)s:%(funcName)s] %(message)s'
         },
+        'sample': {
+            'format': '%(levelname)s [%(asctime)s] %(message)s'
+        },
     },
     'filters': {  # 对日志进行过滤
     },
     'handlers': {  # 日志处理方法
-        'file': {  # 向文件中输出日志
+        'file': {  # 向文件中输出项目日志
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'logs/dms.log'),  # 日志文件的位置
@@ -255,6 +258,14 @@ LOGGING = {
             'backupCount': 10,
             'formatter': 'verbose'
         },
+        # 'monitor': {  # 向文件中输出管控日志
+        #     'level': 'INFO',
+        #     'class': 'logging.handlers.RotatingFileHandler',
+        #     'filename': os.path.join(BASE_DIR, 'logs/monitor_0tiffs.log'),  # 日志文件的位置
+        #     'maxBytes': 300 * 1024 * 1024,
+        #     'backupCount': 5,
+        #     'formatter': 'sample'
+        # },
     },
     'loggers': {  # 日志器
         'django': {  # 定义了一个名为django的日志器
@@ -262,5 +273,10 @@ LOGGING = {
             'propagate': True,  # 是否继续传递日志信息
             'level': 'INFO',  # 日志器接收的最低日志级别
         },
+        # 'monitor_0tiff': {  # 定义了一个名为monitor_0tiff的日志器
+        #     'handlers': ['monitor'],  # 向文件中输出日志
+        #     'propagate': True,  # 是否继续传递日志信息
+        #     'level': 'INFO',  # 日志器接收的最低日志级别
+        # },
     }
 }
