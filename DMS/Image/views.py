@@ -88,7 +88,7 @@ class StatisticView(APIView):
         # ----- 大图信息表 ------ #
 
         # 大图数量
-        image_count = Image.objects.count()
+        image_count = Image.objects.filter(is_delete=False).count()
 
         # 4. 倍数
 
@@ -294,7 +294,7 @@ class ImageFilter(FilterSet):
     """搜索类"""
 
     pathology = CharFilter(lookup_expr='icontains')  # 模糊查询（包含），并且忽略大小写
-    file_name = CharFilter(lookup_expr='icontains')  # 模糊查询（包含），并且忽略大小写
+    file_name = CharFilter(lookup_expr='iexact')  # 模糊查询（包含），并且忽略大小写
     resolution = CharFilter(lookup_expr='iexact')  # 精确查询
     storage_path = CharFilter(lookup_expr='iexact')  # 精确查询
 
