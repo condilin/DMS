@@ -5,6 +5,7 @@
 # @time: 19-1-15 下午2:54
 
 import pyinotify
+from pyinotify import IN_CREATE, IN_MOVED_TO, IN_DELETE, IN_MOVED_FROM, IN_MOVE_SELF
 import os
 import time
 import logging
@@ -90,6 +91,10 @@ class EvenHandle(pyinotify.ProcessEvent):
         1.文件被手动'复制'文件到监控文件夹内
         2.手动在监控文件夹中'创建'文件
         """
+        # 如果是创建文件夹, 则不需要在dms中保存该记录, 直接结束
+        if event.dir:
+            logging.warning('IN_CREATE: 创建一个新的文件夹：%s' % event.pathname)
+            return
 
         # 将状态改为Flase
         self.use_in_move_to = False
@@ -102,6 +107,11 @@ class EvenHandle(pyinotify.ProcessEvent):
         2.文件被手动'剪切'文件到监控文件夹内
         3.手动/使用命令mv在监控文件夹中修改文件名（先删除再'创建'）
         """
+
+        # 如果是修改文件夹的名称, 则不需要在dms中保存该记录, 直接结束
+        if event.dir:
+            logging.warning('IN_MOVED_TO：文件夹修改名字后为：%s' % event.pathname)
+            return
 
         # --------------------- 新的文件名 --------------------- #
         new_file_name = os.path.splitext(event.name)[0]
@@ -118,7 +128,7 @@ class EvenHandle(pyinotify.ProcessEvent):
             # 如果可以从队列中获取到大图的原文件名, 说明用户的操作是：修改文件名或移动图片路径（in_move_from和in_move_to操作)
             old_file_name = self.in_move_from_old_file_name.pop(0)
             old_storage_path = self.in_move_from_old_storage_path.pop(0)
-            # 如果旧的文件名和新的文件名不一样, 说明用户在修改文件名, 是需要在数据库修改文件名和病理号
+            # 如果旧的文件名和新的文件名不一样, 说明用户在修改文件名, 需要在数据库修改文件名和病理号
             if old_file_name != new_file_name:
                 image = {
                     'file_name': new_file_name,
@@ -132,6 +142,7 @@ class EvenHandle(pyinotify.ProcessEvent):
                 image = {
                     'storage_path': new_storage_path
                 }
+                print('提交要修改的image为：%s' % image)
                 # 根据旧文件名和旧存储路径, 查询该大图在数据库中是否存在
                 image_results = self.query_exist_record(type='image', old_file_name=old_file_name,
                                                         old_storage_path=old_storage_path)
@@ -210,6 +221,7 @@ class EvenHandle(pyinotify.ProcessEvent):
         1.通过命令rm将监控文件夹中的文件'删除'
         2.手动'delete'监控文件夹中的文件
         """
+
         # 根据文件名和存储路径, 查询该大图在数据库中是否存在
         delete_file_name, _ = os.path.splitext(event.name)
         # 为了能和数据库中的路径进行匹配, 要去掉'/home/'
@@ -238,6 +250,11 @@ class EvenHandle(pyinotify.ProcessEvent):
         2.手动从监控文件夹中将文件通过剪切方式移走
         3.手动/使用命令mv在监控文件夹中修改文件名（先'删除'再创建）
         """
+
+        # 如果是移动文件夹, 则不需要在dms中记录, 直接结束
+        if event.dir:
+            logging.info('IN_MOVED_FROM: 文件夹名称修改前为：%s' % event.pathname)
+            return
 
         # 原大图的文件名以及存储路径
         old_file_name, _ = os.path.splitext(event.name)
@@ -271,9 +288,13 @@ class FSmonitor(object):
         dir_name = event.pathname.split(self.path)[1].split('/')[1]
 
         # return True to stop processing of event (to "stop chaining")
-        # 不符合其中一个条件, 则返回True, 停止chaining
-        if suffix_name not in self.suffix_type or dir_name not in self.dir_type:
+        # 1.如果监控的文件夹的名称不在{'20X', '40X'}, 则停止chaining
+        if dir_name not in self.dir_type:
             return True
+        # 2.满足条件1, 如果监控的文件后缀不在{'.kfb', '.tiff', '.TMAP'}, 则停止chaining
+        elif suffix_name not in self.suffix_type:
+            return True
+        # 3.同时满足条件1, 2, 则return False
         else:
             return False
 
@@ -282,7 +303,8 @@ class FSmonitor(object):
         wm = pyinotify.WatchManager()
 
         # 监控事件
-        mask = pyinotify.IN_CREATE | pyinotify.IN_MOVED_TO | pyinotify.IN_DELETE | pyinotify.IN_MOVED_FROM
+        # 加上IN_MOVE_SELF监控事件, 可以对新建的文件夹, 同时修改其文件夹名称, 再将文件(a.txt)移入进去之后, 得到a.txt所在的正确路径
+        mask = IN_CREATE | IN_MOVED_TO | IN_DELETE | IN_MOVED_FROM | IN_MOVE_SELF
         # 添加监控：指定需要监控的目录, 指定需要监控的事件
         wm.add_watch(self.path, mask, auto_add=True, rec=True)
 
