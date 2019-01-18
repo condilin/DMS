@@ -7,20 +7,24 @@
 import pyinotify
 import os
 import time
-from DMS.utils import variable
 import logging
 import requests
 import json
 
 
-# 配置日志
+# 配置日志/初始化变量
 class ConfigLog(object):
     def __init__(self):
+        # 日志输出的位置
+        self.log_name = './monitor_0tiffs.log'
+        # 输出格式
+        self.log_format = '%(levelname)s [%(asctime)s] %(message)s'
+
         # logging配置
         logging.basicConfig(
             level=logging.INFO,
-            format=variable.LOG_FORMAT,
-            filename=variable.LOG_NAME,
+            format=self.log_format,
+            filename=self.log_name,
         )
 
 
@@ -28,24 +32,36 @@ class ConfigLog(object):
 class EvenHandle(pyinotify.ProcessEvent):
     """事件处理"""
 
-    def query_exist_record(self, type=None, event=None, pathology=None):
+    def my_init(self, **kargs):
+        # dms地址
+        self.host = '192.168.2.179'
+        # 监控路径
+        self.path = '/home/data_samba/LCT_DATA/0TIFF'
+        # self.path = '/home/data_samba/TMP/test_monitor'
+        # 创建队列1, 存储文件修改名字前的文件名
+        self.in_move_from_old_file_name = []
+        # 创建队列2, 存储文件修改名字前的文件名的存储路径
+        self.in_move_from_old_storage_path = []
+        # 状态开关, 用于确定使用的是复制监控还是剪切监控
+        self.use_in_move_to = True
+
+    def query_exist_record(self, type=None, **kwargs):
         """查询记录在数据库中是否存在"""
 
         # 查询大图文件名在数据库中是否存在
         if type == 'image':
             # 同时根据文件名和存储路径, 可以查询出唯一的一张大图, 查询该大图在数据库中的id
-            file_name = os.path.splitext(event.name)[0]
-            # 为了能和数据库中的路径进行匹配, 要去掉'/home/'
-            samba_storage_path = event.path.replace('/home/', '')
+            # 注意：in_move_to此时获取到的名字是已重命名之后的, 因此通过此文件名去数据库中查询id是查不到的
+            # 需要通过旧文件名和旧的存储路径才能查询到
             query_url = 'http://%s/api/v1/images/?file_name=%s&storage_path=%s' % (
-                variable.SERVER_HOST, file_name, samba_storage_path
+                self.host, kwargs['old_file_name'], kwargs['old_storage_path']
             )
         # 查询病例中对应的病理号在数据库中是否存在
         elif type == 'case':
-            query_url = 'http://%s/api/v1/cases/?pathology=%s' % (variable.SERVER_HOST, pathology)
+            query_url = 'http://%s/api/v1/cases/?pathology=%s' % (self.host, kwargs['pathology'])
         # 查询朱博士诊断中对应的病理号在数据库中是否存在
         else:
-            query_url = 'http://%s/api/v1/diagnosis/?pathology=%s' % (variable.SERVER_HOST, pathology)
+            query_url = 'http://%s/api/v1/diagnosis/?pathology=%s' % (self.host, kwargs['pathology'])
         response = requests.get(query_url)
         # 转换成dict
         response_dict = json.loads(response.text)
@@ -74,8 +90,11 @@ class EvenHandle(pyinotify.ProcessEvent):
         1.文件被手动'复制'文件到监控文件夹内
         2.手动在监控文件夹中'创建'文件
         """
-        print('IN_CREATE')
-        logging.info('IN_CREATE: 监控文件夹下新增文件: %s' % event.pathname)
+
+        # 将状态改为Flase
+        self.use_in_move_to = False
+        # 调用process_IN_MOVED_TO的方法创建一条新的记录
+        self.process_IN_MOVED_TO(event)
 
     def process_IN_MOVED_TO(self, event):
         """
@@ -84,40 +103,55 @@ class EvenHandle(pyinotify.ProcessEvent):
         3.手动/使用命令mv在监控文件夹中修改文件名（先删除再'创建'）
         """
 
-        # 根据文件名和存储路径, 查询该大图在数据库中是否存在
-        image_results = self.query_exist_record(type='image', event=event)
+        # --------------------- 新的文件名 --------------------- #
+        new_file_name = os.path.splitext(event.name)[0]
+        # --------------------- 病理号 --------------------- #
+        pathology = self.rename_file_name(new_file_name)
+        # --------------------- 新的存储路径 --------------------- #
+        new_storage_path = event.path.replace('/home/', '')
 
-        # 如果存在, 则修改该记录的文件名, 否则新增一条记录
-        if image_results:
+        try:
+            # 如果是触发process_IN_CREATE方法, 则手动抛出异常
+            if not self.use_in_move_to:
+                raise Exception('用户是通过复制创建内容, 而不是通过剪切！')
+
+            # 如果可以从队列中获取到大图的原文件名, 说明用户的操作是：修改文件名或移动图片路径（in_move_from和in_move_to操作)
+            old_file_name = self.in_move_from_old_file_name.pop(0)
+            old_storage_path = self.in_move_from_old_storage_path.pop(0)
+            # 如果旧的文件名和新的文件名不一样, 说明用户在修改文件名, 是需要在数据库修改文件名和病理号
+            if old_file_name != new_file_name:
+                image = {
+                    'file_name': new_file_name,
+                    'pathology': pathology
+                }
+                # 根据旧文件名和旧存储路径, 查询该大图在数据库中是否存在
+                image_results = self.query_exist_record(type='image', old_file_name=old_file_name,
+                                                        old_storage_path=old_storage_path)
+            else:
+                # 否则说明用户是进行文件的移动, 是修改文件存储路径即可
+                image = {
+                    'storage_path': new_storage_path
+                }
+                # 根据旧文件名和旧存储路径, 查询该大图在数据库中是否存在
+                image_results = self.query_exist_record(type='image', old_file_name=old_file_name,
+                                                        old_storage_path=old_storage_path)
+
             # 获取该大图的id值
             image_id = image_results[0]['id']
-            # 文件名
-            new_file_name = os.path.splitext(event.name)[0]
-
-            # 修改数据
-            image = {
-                'file_name': new_file_name,
-                'pathology': self.rename_file_name(new_file_name)
-            }
 
             # 发送patch请求, 修改文件名和病理号
-            patch_url = 'http://%s/api/v1/images/%s/' % (variable.SERVER_HOST, image_id)
-            response = requests.patch(patch_url, json=image)
+            response = requests.patch('http://%s/api/v1/images/%s/' % (self.host, image_id), json=image)
             if response.status_code != 200:
                 logging.error('dms数据库修改数据失败：%s' % response.text)
                 return
 
-            print('IN_MOVED_TO: 修改')
             logging.warning('原文件名为：%s, 修改后的文件名为：%s' % (image_results[0]['file_name'], new_file_name))
-        else:
+
+        except Exception as e:
+            # 否则是新剪切进来的大图, 因此新增一条记录
+
             # --------------------- 倍数 --------------------- #
-            resolution = event.pathname.split(variable.PATH)[1].split('/')[1]
-            # --------------------- 文件名 --------------------- #
-            file_name = os.path.splitext(event.name)[0]
-            # --------------------- 病理号 --------------------- #
-            pathology = self.rename_file_name(file_name)
-            # --------------------- 存储路径 --------------------- #
-            samba_storage_path = event.path.replace('/home/', '')
+            resolution = event.pathname.split(self.path)[1].split('/')[1]
             # --------------- 文件创建时间（扫描时间）------------------ #
             file_create_time_ts = os.path.getctime(event.pathname)
             scan_time = self.timestamp_to_time(file_create_time_ts)
@@ -149,9 +183,9 @@ class EvenHandle(pyinotify.ProcessEvent):
             # 新增数据
             image = {
                 'resolution': resolution,
-                'file_name': file_name,
+                'file_name': new_file_name,
                 'pathology': pathology,
-                'storage_path': samba_storage_path,
+                'storage_path': new_storage_path,
                 'scan_time': scan_time,
                 'diagnosis_label_doctor': diagnosis_label_doctor,
                 'waveplate_source': waveplate_source,
@@ -160,15 +194,15 @@ class EvenHandle(pyinotify.ProcessEvent):
             }
 
             # 发送post请求, 新增一条大图记录
-            post_url = 'http://%s/api/v1/images/' % variable.SERVER_HOST
-            response = requests.post(post_url, json=image)
+            response = requests.post('http://%s/api/v1/images/' % self.host, json=image)
             if response.status_code != 201:
                 logging.error('dms数据库新增数据失败：%s' % response.text)
                 return
 
+            # 修改回状态, 保持use_in_move_to为True
+            self.use_in_move_to = True
             logging.info('dms数据库新增一条大图记录, 大图名为：%s' % event.name)
 
-        print('IN_MOVED_TO: 新增')
         logging.info('IN_MOVED_TO: 监控文件夹下新增文件: %s' % event.pathname)
 
     def process_IN_DELETE(self, event):
@@ -176,9 +210,12 @@ class EvenHandle(pyinotify.ProcessEvent):
         1.通过命令rm将监控文件夹中的文件'删除'
         2.手动'delete'监控文件夹中的文件
         """
-
-        # 根据文件名和倍数, 查询该大图在数据库中是否存在
-        results = self.query_exist_record(type='image', event=event)
+        # 根据文件名和存储路径, 查询该大图在数据库中是否存在
+        delete_file_name, _ = os.path.splitext(event.name)
+        # 为了能和数据库中的路径进行匹配, 要去掉'/home/'
+        delete_storage_path = event.path.replace('/home/', '')
+        results = self.query_exist_record(type='image', old_file_name=delete_file_name,
+                                          old_storage_path=delete_storage_path)
 
         # 如果不存在, 返回即可, 反正该条记录也是要删除, 不存在最好
         if not results:
@@ -188,12 +225,11 @@ class EvenHandle(pyinotify.ProcessEvent):
         # 获取该大图的id值
         image_id = results[0]['id']
         # 删除dms数据库中该大图的记录
-        response = requests.delete('http://%s/api/v1/images/%s/' % (variable.SERVER_HOST, image_id))
+        response = requests.delete('http://%s/api/v1/images/%s/' % (self.host, image_id))
         if response.status_code != 204:
             logging.error('dms数据库删除数据失败：%s' % response.text)
             return
 
-        print('IN_DELETE')
         logging.warning('IN_DELETE: 监控文件夹下删除文件: %s' % event.pathname)
 
     def process_IN_MOVED_FROM(self, event):
@@ -202,24 +238,41 @@ class EvenHandle(pyinotify.ProcessEvent):
         2.手动从监控文件夹中将文件通过剪切方式移走
         3.手动/使用命令mv在监控文件夹中修改文件名（先'删除'再创建）
         """
-        print('IN_MOVED_FROM')
+
+        # 原大图的文件名以及存储路径
+        old_file_name, _ = os.path.splitext(event.name)
+        # 为了能和数据库中的路径进行匹配, 要去掉'/home/'
+        old_storage_path = event.path.replace('/home/', '')
+        # 将文件修改前的名字保存到队列
+        self.in_move_from_old_file_name.append(old_file_name)
+        # 将文件修改前的名字保存到队列
+        self.in_move_from_old_storage_path.append(old_storage_path)
+
         logging.warning('IN_MOVED_FROM: 监控文件夹下移走文件: %s' % event.pathname)
 
 
 class FSmonitor(object):
 
-    @staticmethod
-    def suffix_filter(event):
+    def __init__(self):
+        # 所有大图的后缀类型
+        self.suffix_type = {'.kfb', '.tiff', '.TMAP'}
+        # 监控的文件夹
+        self.dir_type = {'20X', '40X'}
+        # 监控路径
+        self.path = '/home/data_samba/LCT_DATA/0TIFF'
+        # self.path = '/home/data_samba/TMP/test_monitor'
+
+    def suffix_filter(self, event):
         """监视dir中指定的后缀文件及目录"""
 
-        # 判断后缀是否为{'.kfb', '.tiff', 'txt'}
+        # 判断后缀是否为{'.kfb', '.tiff'}
         suffix_name = os.path.splitext(event.name)[1]
         # 判断文件夹是否为20X或40X
-        dir_name = event.pathname.split(variable.PATH)[1].split('/')[1]
+        dir_name = event.pathname.split(self.path)[1].split('/')[1]
 
         # return True to stop processing of event (to "stop chaining")
         # 不符合其中一个条件, 则返回True, 停止chaining
-        if suffix_name not in variable.SUFFIX_TYPE or dir_name not in variable.DIR_TYPE:
+        if suffix_name not in self.suffix_type or dir_name not in self.dir_type:
             return True
         else:
             return False
@@ -231,7 +284,7 @@ class FSmonitor(object):
         # 监控事件
         mask = pyinotify.IN_CREATE | pyinotify.IN_MOVED_TO | pyinotify.IN_DELETE | pyinotify.IN_MOVED_FROM
         # 添加监控：指定需要监控的目录, 指定需要监控的事件
-        wm.add_watch(variable.PATH, mask, auto_add=True, rec=True)
+        wm.add_watch(self.path, mask, auto_add=True, rec=True)
 
         # 交给Notifier进行处理:
         # 指定处理类：EvenHandle, pevent参数：指定钩子函数, 筛选指定监视的后缀文件
@@ -249,13 +302,15 @@ class FSmonitor(object):
 
 
 if __name__ == '__main__':
+
     # 开启日志
     ConfigLog()
-
-    logging.info('----------- start monitor：%s -----------' % variable.PATH)
-
+    
     # 开启监控
     monitor_samba_0tiff = FSmonitor()
+
+    logging.info('----------- start monitor：%s -----------' % monitor_samba_0tiff.path)
+
     monitor_samba_0tiff.monitor()
 
-    logging.info('=========== stop monitor：%s ============\n\n\n' % variable.PATH)
+    logging.info('=========== stop monitor：%s ============\n\n\n' % monitor_samba_0tiff.path)
