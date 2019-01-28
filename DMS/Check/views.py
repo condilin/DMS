@@ -14,13 +14,39 @@ import django_excel as excel
 from collections import Counter
 import xml.dom.minidom
 from DMS.settings.dev import DATA_SAMBA_PREX, BATCH6_XMLS_PATH, BATCH6_1_XMLS_PATH, \
-    BATCH6_CELLS_PATH, BATCH6_1_CELLS_PATH
+    BATCH6_CELLS_PATH, BATCH6_1_CELLS_PATH, BATCH6_3_CELLS_PATH, BATCH6_3_XMLS_PATH
 
 from Check.models import Check, CheckDetail
 from Check.serializers import CheckSerializer
 
 import logging
 logger = logging.getLogger('django')
+
+
+# import threading
+# from dwebsocket.decorators import accept_websocket
+# from django.shortcuts import render
+#
+# def base_view(request):
+#     return render(request, 'test.html')
+#
+# clients = []
+#
+# @accept_websocket
+# def echo(request):
+#     if request.is_websocket:
+#         lock = threading.RLock()
+#         try:
+#             lock.acquire()
+#             clients.append(request.websocket)
+#             for message in request.websocket:
+#                 if not message:
+#                     break
+#                 for client in clients:
+#                     client.send(message)
+#         finally:
+#             clients.remove(request.websocket)
+#             lock.release()
 
 
 class DownloadFile(APIView):
@@ -43,8 +69,8 @@ class DownloadFile(APIView):
 
         # 通过指定字段的别名, 指定返回的格式顺序, 下载时默认按字母进行排序
         img_data = CheckDetail.objects.filter(is_delete=False).annotate(
-            c1_大图名称=F('image'), c2_分类标签=F('classify'),
-            c3_数量=F('class_number')).values('c1_大图名称', 'c2_分类标签', 'c3_数量')
+            c1_审核版本号=F('check_version_number'), c2_大图名称=F('image'), c3_分类标签=F('classify'),
+            c4_数量=F('class_number')).values('c1_审核版本号', 'c2_大图名称', 'c3_分类标签', 'c4_数量')
 
         # 命名返回文件名字
         file_name_add_date = '训练详情信息_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
@@ -73,7 +99,8 @@ class UpdateCheck(APIView):
         # 存储所有XML/CELLS的版本号及路径
         version_list = [
             ('BATCH6', os.path.join(DATA_SAMBA_PREX, BATCH6_CELLS_PATH), os.path.join(DATA_SAMBA_PREX, BATCH6_XMLS_PATH)),
-            ('BATCH6.1', os.path.join(DATA_SAMBA_PREX, BATCH6_1_CELLS_PATH), os.path.join(DATA_SAMBA_PREX, BATCH6_1_XMLS_PATH))
+            ('BATCH6.1', os.path.join(DATA_SAMBA_PREX, BATCH6_1_CELLS_PATH), os.path.join(DATA_SAMBA_PREX, BATCH6_1_XMLS_PATH)),
+            ('BATCH6.3', os.path.join(DATA_SAMBA_PREX, BATCH6_3_CELLS_PATH), os.path.join(DATA_SAMBA_PREX, BATCH6_3_XMLS_PATH))
         ]
 
         if update_type == 'sample':
@@ -273,4 +300,3 @@ class SUDCheckView(APIView):
         serializer.save()
 
         return Response(serializer.data)
-

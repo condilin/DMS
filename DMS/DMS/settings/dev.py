@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     'rest_framework_swagger',
     # 'django_crontab',
     'django_extensions',  # python manage.py shell_plus --print-sql
+    'dwebsocket',
 
     # 自己的应用
     'Case',
@@ -192,21 +193,25 @@ REST_FRAMEWORK = {
 # ------------------------------ 自定义参数设置 ------------------------------ #
 
 # 本机中的data_samba的路径
-DATA_SAMBA_PREX = '/run/user/1000/gvfs/smb-share:server=192.168.2.221,share=data_samba'
+DATA_SAMBA_PREX = '/run/user/1000/gvfs/smb-share:server=192.168.2.221,share=data_samba/LCT_DATA'
 
 # 移动大图到垃圾文件夹的目录
 TRASH_FILE_PATH = 'TMP/IMAGE_GARBAGE'
 
 # 大图存储路径
-DATA_SAMBA_IMAGE_LOCATE = 'LCT_DATA/0TIFF'
+DATA_SAMBA_IMAGE_LOCATE = '0TIFF'
 
 # 训练数据存储路径
 # batch6
-BATCH6_CELLS_PATH = 'DATA/4TRAIN_DATA/20181201_BATCH_6/CELLS'
-BATCH6_XMLS_PATH = 'DATA/4TRAIN_DATA/20181201_BATCH_6/XMLS'
+BATCH6_CELLS_PATH = '4TRAIN_DATA/20181201_BATCH_6/CELLS'
+BATCH6_XMLS_PATH = '4TRAIN_DATA/20181201_BATCH_6/XMLS'
 # batch6.1
-BATCH6_1_CELLS_PATH = 'DATA/4TRAIN_DATA/20181205_BATCH_6.1/CELLS'
-BATCH6_1_XMLS_PATH = 'DATA/4TRAIN_DATA/20181216_BATCH_6.1/XMLS_CHECKED'
+BATCH6_1_CELLS_PATH = '4TRAIN_DATA/20181205_BATCH_6.1/CELLS'
+BATCH6_1_XMLS_PATH = '4TRAIN_DATA/20181216_BATCH_6.1/XMLS_CHECKED'
+# batch6.3
+BATCH6_3_CELLS_PATH = '4TRAIN_DATA/batch6.3/CELLS'
+BATCH6_3_XMLS_PATH = '4TRAIN_DATA/batch6.3/XMLS_CHECKED'
+
 
 # ------------------------------ 配置下载excel格式的插件 ------------------------------ #
 
@@ -280,3 +285,7 @@ LOGGING = {
         # },
     }
 }
+
+
+# WEBSOCKET_ACCEPT_ALL=True
+# WEBSOCKET_FACTORY_CLASS = 'dwebsocket.backends.uwsgi.factory.uWsgiWebSocketFactory'
