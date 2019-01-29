@@ -265,7 +265,7 @@ class UpdateDataBase(APIView):
                                 diagnosis_label_zhu = None
 
                             # 创建一条记录对象, 并添加到列表
-                            queryset_list.append(Image(pathology=pathology, file_name=file_name,
+                            queryset_list.append(Image(pathology=pathology, file_name=name,
                                                        storage_path=storage_path, resolution=resolution,
                                                        diagnosis_label_doctor=diagnosis_label_doctor,
                                                        diagnosis_label_zhu=diagnosis_label_zhu,
@@ -293,6 +293,7 @@ class UpdateDataBase(APIView):
 class ImageFilter(FilterSet):
     """搜索类"""
 
+    id = CharFilter(lookup_expr='iexact')  # 精确查询
     pathology = CharFilter(lookup_expr='icontains')  # 模糊查询（包含），并且忽略大小写
     file_name = CharFilter(lookup_expr='iexact')  # 模糊查询（包含），并且忽略大小写
     resolution = CharFilter(lookup_expr='iexact')  # 精确查询
@@ -300,7 +301,7 @@ class ImageFilter(FilterSet):
 
     class Meta:
         model = Image
-        fields = ['pathology', 'file_name', 'resolution', 'storage_path']
+        fields = ['id', 'pathology', 'file_name', 'resolution', 'storage_path']
 
 
 class SImageView(ListCreateAPIView):

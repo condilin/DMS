@@ -14,7 +14,7 @@ import django_excel as excel
 from collections import Counter
 import xml.dom.minidom
 from DMS.settings.dev import DATA_SAMBA_PREX, BATCH6_XMLS_PATH, BATCH6_1_XMLS_PATH, \
-    BATCH6_CELLS_PATH, BATCH6_1_CELLS_PATH, BATCH6_3_CELLS_PATH, BATCH6_3_XMLS_PATH
+    BATCH6_CELLS_PATH, BATCH6_1_CELLS_PATH, BATCH6_2_CELLS_PATH, BATCH6_3_CELLS_PATH, BATCH6_3_XMLS_PATH
 
 from Check.models import Check, CheckDetail
 from Check.serializers import CheckSerializer
@@ -100,6 +100,7 @@ class UpdateCheck(APIView):
         version_list = [
             ('BATCH6', os.path.join(DATA_SAMBA_PREX, BATCH6_CELLS_PATH), os.path.join(DATA_SAMBA_PREX, BATCH6_XMLS_PATH)),
             ('BATCH6.1', os.path.join(DATA_SAMBA_PREX, BATCH6_1_CELLS_PATH), os.path.join(DATA_SAMBA_PREX, BATCH6_1_XMLS_PATH)),
+            # ('BATCH6.2', os.path.join(DATA_SAMBA_PREX, BATCH6_2_CELLS_PATH), None),
             ('BATCH6.3', os.path.join(DATA_SAMBA_PREX, BATCH6_3_CELLS_PATH), os.path.join(DATA_SAMBA_PREX, BATCH6_3_XMLS_PATH))
         ]
 
