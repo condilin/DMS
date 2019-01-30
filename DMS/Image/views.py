@@ -64,12 +64,12 @@ class StatisticView(APIView):
 
         # 3.1 各类数量：
         # 统计各类标签不含null值的个数
-        wp_source_count = Case.objects.filter(is_delete=False, waveplate_source__isnull=False).values(
+        wp_source_count = Image.objects.filter(is_delete=False, waveplate_source__isnull=False).values(
             'waveplate_source').annotate(
             waveplate_source_count=Count('waveplate_source')
         ).order_by('waveplate_source_count')
         # 统计各类标签为null值的个数
-        wp_source_null_count = Case.objects.filter(is_delete=False, waveplate_source__isnull=True).count()
+        wp_source_null_count = Image.objects.filter(is_delete=False, waveplate_source__isnull=True).count()
         wp_source_null_dict = {
             'waveplate_source_count': wp_source_null_count,
             'waveplate_source': None
