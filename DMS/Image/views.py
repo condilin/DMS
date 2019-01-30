@@ -207,8 +207,9 @@ class UpdateDataBase(APIView):
 
         upper_pathology = file_name.split('_')[0].upper()
 
-        if upper_pathology.startswith('TJ') or upper_pathology.startswith('TB') or upper_pathology.startswith(
-                'TC') or upper_pathology.startswith('TD') or upper_pathology.startswith('DS'):
+        if upper_pathology.startswith('TJ') or upper_pathology.startswith(
+                'TB') or upper_pathology.startswith('TC') or upper_pathology.startswith(
+                'TD') or upper_pathology.startswith('DS') or upper_pathology.startswith('CA'):
             waveplate_source = '华银'
 
         elif upper_pathology.startswith('T'):
@@ -227,7 +228,8 @@ class UpdateDataBase(APIView):
             waveplate_source = '广州军区总医院'
 
         elif upper_pathology.startswith('BD') or upper_pathology.startswith('XB') or upper_pathology.startswith(
-                'FX') or upper_pathology.startswith('BV') or upper_pathology.isdigit():
+                'FX') or upper_pathology.startswith('BV') or upper_pathology.startswith(
+                'ZA') or upper_pathology.isdigit():
             waveplate_source = '南方医院'
 
         elif re.match('\d{4}-\d{2}-\d{2}', upper_pathology):
