@@ -23,3 +23,6 @@ class FileRenameRecordAdmin(admin.ModelAdmin):
 
     # 每页显示10条记录
     list_per_page = 10
+
+    # 搜索栏
+    search_fields = ['pathology', 'current_file_name', 'his_name1']
