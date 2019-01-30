@@ -11,6 +11,7 @@ from django.db.models import Count, F
 
 import os
 import time
+import re
 import django_excel as excel
 from DMS.settings.dev import DATA_SAMBA_IMAGE_LOCATE, DATA_SAMBA_PREX, TRASH_FILE_PATH
 
@@ -200,6 +201,43 @@ class UpdateDataBase(APIView):
         pathology = file_name if len(file_name) == 19 else file_name.split('_')[0]
         return pathology
 
+    @staticmethod
+    def waveplate_source_extra(file_name):
+        """通过病理号提取出片源"""
+
+        upper_pathology = file_name.split('_')[0].upper()
+
+        if upper_pathology.startswith('TJ') or upper_pathology.startswith('TB') or upper_pathology.startswith(
+                'TC') or upper_pathology.startswith('TD') or upper_pathology.startswith('DS'):
+            waveplate_source = '华银'
+
+        elif upper_pathology.startswith('T'):
+            waveplate_source = '泉州'
+
+        elif upper_pathology.startswith('NJ'):
+            waveplate_source = '华银南京'
+
+        elif upper_pathology.startswith('SPH') or upper_pathology.startswith('SZH'):
+            waveplate_source = '深圳人民医院'
+
+        elif upper_pathology.startswith('EL') or upper_pathology.startswith('L'):
+            waveplate_source = '郑大一附属医院'
+
+        elif upper_pathology.startswith('GZY'):
+            waveplate_source = '广州军区总医院'
+
+        elif upper_pathology.startswith('BD') or upper_pathology.startswith('XB') or upper_pathology.startswith(
+                'FX') or upper_pathology.startswith('BV') or upper_pathology.isdigit():
+            waveplate_source = '南方医院'
+
+        elif re.match('\d{4}-\d{2}-\d{2}', upper_pathology):
+            waveplate_source = '南方医院或华银'
+
+        else:
+            waveplate_source = ''
+
+        return waveplate_source
+
     def post(self, request):
 
         start_time = time.time()
@@ -234,6 +272,8 @@ class UpdateDataBase(APIView):
                             file_name, suffix_name = os.path.splitext(name)
                             # --------------------- 病理号 --------------------- #
                             pathology = self.rename_file_name(file_name)
+                            # --------------------- 片源 ----------------------- #
+                            waveplate_source = self.waveplate_source_extra(file_name)
                             # --------------------- 存储路径 --------------------- #
                             storage_path = root.split('=')[2]
                             # --------------- 文件创建时间（扫描时间）------------------ #
@@ -247,16 +287,13 @@ class UpdateDataBase(APIView):
                             if case:
                                 if case.count() >= 2:
                                     diagnosis_label_doctor = '?: %s条病例信息' % case.count()
-                                    waveplate_source = case.filter(waveplate_source__isnull=False).first().get('waveplate_source')
-                                    making_way = case.filter(waveplate_source__isnull=False).first().get('making_way')
+                                    making_way = case.filter(making_way__isnull=False).first().get('making_way')
                                 else:
                                     diagnosis_label_doctor = case.first().get('diagnosis_label_doctor')
-                                    waveplate_source = case.first().get('waveplate_source')
                                     making_way = case.first().get('making_way')
                             else:
                                 # 匹配不上,则为None
                                 diagnosis_label_doctor = None
-                                waveplate_source = None
                                 making_way = None
                             # --------------------- 朱博士最新诊断标签 --------------------- #
                             try:
