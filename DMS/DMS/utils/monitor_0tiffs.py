@@ -88,11 +88,10 @@ class EvenHandle(pyinotify.ProcessEvent):
         return pathology
 
     @staticmethod
-    def waveplate_source_extra(full_file_name):
+    def waveplate_source_extra(file_name):
         """通过病理号提取出片源"""
 
         # 将完整的文件名，去掉后缀
-        file_name = os.path.splitext(full_file_name)[0]
         upper_pathology = file_name.split('_')[0].upper()
 
         if upper_pathology.startswith('TJ') or upper_pathology.startswith(
@@ -314,7 +313,7 @@ class FSmonitor(object):
 
     def __init__(self):
         # 所有大图的后缀类型
-        self.suffix_type = {'.kfb', '.tiff', '.TMAP'}
+        self.suffix_type = {'.kfb', '.tiff', '.TMAP', '.tmap'}
         # 监控的文件夹
         self.dir_type = {'20X', '40X'}
         # 监控路径
