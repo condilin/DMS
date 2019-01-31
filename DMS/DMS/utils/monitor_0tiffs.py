@@ -7,6 +7,7 @@
 import pyinotify
 from pyinotify import IN_CREATE, IN_MOVED_TO, IN_DELETE, IN_MOVED_FROM, IN_MOVE_SELF
 import os
+import re
 import time
 import logging
 import requests
@@ -86,6 +87,47 @@ class EvenHandle(pyinotify.ProcessEvent):
         pathology = file_name if len(file_name) == 19 else file_name.split('_')[0]
         return pathology
 
+    @staticmethod
+    def waveplate_source_extra(full_file_name):
+        """通过病理号提取出片源"""
+
+        # 将完整的文件名，去掉后缀
+        file_name = os.path.splitext(full_file_name)[0]
+        upper_pathology = file_name.split('_')[0].upper()
+
+        if upper_pathology.startswith('TJ') or upper_pathology.startswith(
+                'TB') or upper_pathology.startswith('TC') or upper_pathology.startswith(
+                'TD') or upper_pathology.startswith('DS') or upper_pathology.startswith('CA'):
+            waveplate_source = '华银'
+
+        elif upper_pathology.startswith('T'):
+            waveplate_source = '泉州'
+
+        elif upper_pathology.startswith('NJ'):
+            waveplate_source = '华银南京'
+
+        elif upper_pathology.startswith('SPH') or upper_pathology.startswith('SZH'):
+            waveplate_source = '深圳人民医院'
+
+        elif upper_pathology.startswith('EL') or upper_pathology.startswith('L'):
+            waveplate_source = '郑大一附属医院'
+
+        elif upper_pathology.startswith('GZY'):
+            waveplate_source = '广州军区总医院'
+
+        elif upper_pathology.startswith('BD') or upper_pathology.startswith('XB') or upper_pathology.startswith(
+                'FX') or upper_pathology.startswith('BV') or upper_pathology.startswith(
+                'ZA') or upper_pathology.isdigit():
+            waveplate_source = '南方医院'
+
+        elif re.match('\d{4}-\d{2}-\d{2}', upper_pathology):
+            waveplate_source = '南方医院或华银'
+
+        else:
+            waveplate_source = 'unknown'
+
+        return waveplate_source
+
     def process_IN_CREATE(self, event):
         """
         1.文件被手动'复制'文件到监控文件夹内
@@ -114,9 +156,11 @@ class EvenHandle(pyinotify.ProcessEvent):
             return
 
         # --------------------- 新的文件名 --------------------- #
-        new_file_name = os.path.splitext(event.name)[0]
+        new_file_name, suffix_name = os.path.splitext(event.name)
         # --------------------- 病理号 --------------------- #
         pathology = self.rename_file_name(new_file_name)
+        # --------------------- 片源 ----------------------- #
+        waveplate_source = self.waveplate_source_extra(new_file_name)
         # --------------------- 新的存储路径 --------------------- #
         new_storage_path = event.path.replace('/home/', '')
 
@@ -128,11 +172,12 @@ class EvenHandle(pyinotify.ProcessEvent):
             # 如果可以从队列中获取到大图的原文件名, 说明用户的操作是：修改文件名或移动图片路径（in_move_from和in_move_to操作)
             old_file_name = self.in_move_from_old_file_name.pop(0)
             old_storage_path = self.in_move_from_old_storage_path.pop(0)
-            # 如果旧的文件名和新的文件名不一样, 说明用户在修改文件名, 需要在数据库修改文件名和病理号
+            # 如果旧的文件名和新的文件名不一样, 说明用户在修改文件名, 需要在数据库修改文件名和病理号以及片源
             if old_file_name != new_file_name:
                 image = {
                     'file_name': new_file_name,
-                    'pathology': pathology
+                    'pathology': pathology,
+                    'waveplate_source': waveplate_source
                 }
                 # 根据旧文件名和旧存储路径, 查询该大图在数据库中是否存在
                 image_results = self.query_exist_record(type='image', old_file_name=old_file_name,
@@ -142,7 +187,6 @@ class EvenHandle(pyinotify.ProcessEvent):
                 image = {
                     'storage_path': new_storage_path
                 }
-                print('提交要修改的image为：%s' % image)
                 # 根据旧文件名和旧存储路径, 查询该大图在数据库中是否存在
                 image_results = self.query_exist_record(type='image', old_file_name=old_file_name,
                                                         old_storage_path=old_storage_path)
@@ -173,16 +217,13 @@ class EvenHandle(pyinotify.ProcessEvent):
             if case_results:
                 if len(case_results) >= 2:
                     diagnosis_label_doctor = '?: %s条病例信息' % len(case_results)
-                    waveplate_source = [i['waveplate_source'] for i in case_results if i['waveplate_source']][0]
                     making_way = [i['making_way'] for i in case_results if i['making_way']][0]
                 else:
                     diagnosis_label_doctor = case_results[0]['diagnosis_label_doctor']
-                    waveplate_source = case_results[0]['waveplate_source']
                     making_way = case_results[0]['making_way']
             else:
                 # 匹配不上,则为None
                 diagnosis_label_doctor = None
-                waveplate_source = None
                 making_way = None
             # --------------------- 朱博士最新诊断标签 --------------------- #
             diagnosis_results = self.query_exist_record(type='diagnosis', pathology=pathology)
@@ -195,6 +236,7 @@ class EvenHandle(pyinotify.ProcessEvent):
             image = {
                 'resolution': resolution,
                 'file_name': new_file_name,
+                'suffix': suffix_name,
                 'pathology': pathology,
                 'storage_path': new_storage_path,
                 'scan_time': scan_time,
@@ -324,10 +366,9 @@ class FSmonitor(object):
 
 
 if __name__ == '__main__':
-
     # 开启日志
     ConfigLog()
-    
+
     # 开启监控
     monitor_samba_0tiff = FSmonitor()
 
