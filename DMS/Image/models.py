@@ -8,6 +8,7 @@ class Image(models.Model):
     id = models.AutoField(primary_key=True, verbose_name=u'唯一主键')
     pathology = models.CharField(max_length=128, verbose_name=u'病理号', null=True, blank=True)
     file_name = models.CharField(max_length=128, verbose_name=u'文件名', null=True, blank=True)
+    suffix = models.CharField(max_length=16, verbose_name=u'文件后缀名', null=True, blank=True)
     resolution = models.CharField(max_length=32, verbose_name=u'分辨率', null=True, blank=True)
     storage_path = models.CharField(max_length=256, verbose_name=u'存储路径', null=True, blank=True)
     waveplate_source = models.CharField(max_length=64, verbose_name=u'片源', null=True, blank=True)

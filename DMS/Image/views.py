@@ -304,7 +304,7 @@ class UpdateDataBase(APIView):
                                 diagnosis_label_zhu = None
 
                             # 创建一条记录对象, 并添加到列表
-                            queryset_list.append(Image(pathology=pathology, file_name=name,
+                            queryset_list.append(Image(pathology=pathology, file_name=file_name, suffix=suffix_name,
                                                        storage_path=storage_path, resolution=resolution,
                                                        diagnosis_label_doctor=diagnosis_label_doctor,
                                                        diagnosis_label_zhu=diagnosis_label_zhu,
