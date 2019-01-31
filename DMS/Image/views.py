@@ -236,7 +236,7 @@ class UpdateDataBase(APIView):
             waveplate_source = '南方医院或华银'
 
         else:
-            waveplate_source = None
+            waveplate_source = 'unknown'
 
         return waveplate_source
 
