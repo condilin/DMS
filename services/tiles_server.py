@@ -30,7 +30,7 @@ def get_path(image_id, request):
             raise Exception('can not get resource', response.status_code, response.content)
 
         image_info = response.json()['results'][0]
-        tif_path = TIF_PATH_PREX + os.path.join(image_info['storage_path'], image_info['file_name'])
+        tif_path = TIF_PATH_PREX + os.path.join(image_info['storage_path'], image_info['file_name']) + image_info['suffix']
         tif_path_cache[image_info['file_name']] = tif_path
 
     return tif_path
@@ -135,9 +135,10 @@ async def cell_image_request(request, image_id, x, y, w, h):
     :return:
     """
 
-    slide = get_slide(get_path(image_id, request))
+    slide = get_slide(image_id, get_path(image_id, request))
 
     tile_image = slide.read_region((x, y), 0, (w, h))
+
     bio = BytesIO()
 
     tile_image.save(bio, 'png')
