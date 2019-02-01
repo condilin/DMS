@@ -271,3 +271,28 @@ class SUDCaseView(APIView):
         case.save()
 
         return Response(status=status.HTTP_204_NO_CONTENT, data={'msg': '删除成功！'})
+
+
+class BatchUpdateCaseView(APIView):
+    """
+    post: 批量删除
+    """
+
+    def post(self, request):
+        # 获取要删除的id列表
+        delete_id_str = request.POST.get('idList', None)
+        print(delete_id_str)
+        if not delete_id_str:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={'msg': '你妹的，没有idlist！'})
+
+        # 根据id列表, 查询数据库对象
+        try:
+            _delete_id_list = delete_id_str.split(',')
+            case = Case.objects.filter(id__in=_delete_id_list, is_delete=False)
+        except Case.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND, data={'msg': '列表中含有不存在的数据！'})
+
+        # 批量更新，.save方法适合于单条记录的保存, 而.update方法适用于批量数据的保存
+        case.update(is_delete=True)
+
+        return Response(status=status.HTTP_204_NO_CONTENT, data={'msg': '批量删除成功！'})
