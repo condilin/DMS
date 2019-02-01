@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.generics import ListCreateAPIView
+from rest_framework.generics import ListCreateAPIView, ListAPIView
 from rest_framework.pagination import LimitOffsetPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import FilterSet, CharFilter
@@ -18,7 +18,7 @@ import django_excel as excel
 from DMS.utils.uploads import save_upload_file
 
 from Case.models import Case
-from Case.serializers import CaseSerializer
+from Case.serializers import CaseSerializer, SearchDupCaseSerializer
 
 import logging
 logger = logging.getLogger('django')
@@ -205,6 +205,28 @@ class CaseFilter(FilterSet):
         fields = ['pathology', 'diagnosis_label_doctor']
 
 
+class SearchDuplicateFileName(ListAPIView):
+    """
+    get: 搜索病例中出现重复的病理号
+    """
+
+    # 指定查询集, 获取病理号出现的次数大于1的记录
+    queryset = Case.objects.filter(is_delete=False).values('pathology').annotate(
+            dup_count=Count('pathology')).filter(dup_count__gt=1)
+
+    # 指定序列化器
+    serializer_class = SearchDupCaseSerializer
+
+    # OrderingFilter：指定排序的过滤器,可以按任意字段排序,通过在路由中通过ordering参数控制,如：?ordering=id
+    # DjangoFilterBackend对应filter_fields属性，做相等查询
+    # SearchFilter对应search_fields，对应模糊查询
+    filter_backends = [OrderingFilter, DjangoFilterBackend, SearchFilter]
+    # 默认指定按哪个字段进行排序
+    ordering_fields = ('pathology',)
+    # 指定可以被搜索字段
+    filter_class = CaseFilter
+
+
 class SCCaseView(ListCreateAPIView):
     """
     get: 查询病例记录列表
@@ -281,7 +303,6 @@ class BatchUpdateCaseView(APIView):
     def post(self, request):
         # 获取要删除的id列表
         delete_id_str = request.POST.get('idList', None)
-        print(delete_id_str)
         if not delete_id_str:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={'msg': '你妹的，没有idlist！'})
 
