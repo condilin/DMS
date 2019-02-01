@@ -184,6 +184,10 @@ STATIC_URL = '/static/'
 # ------------------------------ DRF相关配置 ------------------------------ #
 
 REST_FRAMEWORK = {
+    # 解决您的CSRF令牌问题
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+    ),
     # 设置默认的分页控制
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 10,  # 默认每页显示多少条
