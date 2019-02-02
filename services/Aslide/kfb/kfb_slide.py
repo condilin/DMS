@@ -1,4 +1,6 @@
-from . import kfb_lowlevel
+import io
+from Aslide.kfb import kfb_lowlevel
+from PIL import Image
 from openslide import AbstractSlide, _OpenSlideMap
 
 

@@ -195,7 +195,7 @@ _get_crop_image_data_ex = _func('GetCropImageDataEx', POINTER(c_ubyte),
                                 [c_void_p, c_int, c_int, c_int, c_int, c_int, c_float])
 
 
-def get_crop_image_data_ex(slide, nIndex, nLeft, nTop, nRight, nBottom):
+def get_crop_image_data_ex(slide, nIndex, nLeft, nTop, nRight, nBottom, fScale=0.0):
     fScale = get_scan_scale(slide)
     img_size = _get_image_size_ex(slide, nLeft, nTop, nRight, nBottom, fScale)
     nBufferLength = img_size.imgsize

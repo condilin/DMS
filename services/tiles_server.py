@@ -77,16 +77,31 @@ async def tiles_dzi(request, image_id):
         return response.html(str(e))
 
 
-# def file(image_bytes, mime_type, img_name):
-#     """http 文件response"""
-#
-#     headers = {}
-#     headers.setdefault(
-#         'Content-Disposition',
-#         'attachment; image_name="{}"'.format(img_name))
-#
-#     return response.HTTPResponse(status=200, headers=headers,
-#                                  content_type=mime_type, body_bytes=image_bytes)
+@app.route('/tiles/label_image/<image_id>_label.<format:[A-z]+>')
+async def tiles_png(request, image_id, format):
+    """
+    get tile image
+    :param request:
+    :param image_id: id of tiff image
+    :param format: view format
+    :return:
+    """
+
+    slide = get_slide(image_id, get_path(image_id, request))
+
+    bio = BytesIO()
+    label_image = slide.label_image
+    label_image.save(bio, 'png')
+    image_bytes = bio.getvalue()
+
+    headers = {}
+    headers.setdefault(
+        'Content-Disposition',
+        'attachment; image_id="{}"'.format(os.path.basename(image_id))
+    )
+
+    return response.HTTPResponse(status=200, headers=headers,
+                                 body_bytes=image_bytes, content_type='image/png')
 
 
 @app.route('/tiles/<image_id>_files/<z:int>/<x:int>_<y:int>.<format:[A-z]+>')

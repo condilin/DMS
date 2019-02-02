@@ -1,8 +1,9 @@
 import os
 
 from openslide import OpenSlide
+from openslide import lowlevel as openslide_lowlevel
 
-# from Aslide.kfb import kfb_lowlevel
+from Aslide.kfb import kfb_lowlevel
 from Aslide.kfb.kfb_slide import KfbSlide
 
 from Aslide.tmap.tmap_slide import TmapSlide
@@ -11,32 +12,38 @@ from Aslide.tmap.tmap_slide import TmapSlide
 class Aslide(object):
 	def __init__(self, filepath):
 		self.filepath = filepath
+		self.format = os.path.splitext(os.path.basename(filepath))[-1]
 
 		# try reader one by one
+
+		read_success = False
+
 		# 1. openslide
 		try:
 			self._osr = OpenSlide(filepath)
+			read_success = True
 		except:
-			self._osr = None
+			pass
 
 		# 2. kfb
-		if not self._osr:
+		if not read_success and self.format in ['.kfb', '.KFB']:
 			try:
 				self._osr = KfbSlide(filepath)
+				read_success = True
 			except:
-				self._osr = None
+				pass
 
 		# 3. tmap
-		if not self._osr:
+		if not read_success and self.format in ['.tmap', '.TMAP']:
 			try:
 				self._osr = TmapSlide(filepath)
+				if self._osr:
+					read_success = True
 			except:
-				self._osr = None
+				pass
 
-		if not self._osr:
+		if not read_success:
 			raise Exception("UnsupportedFormat or Missing File => %s" % filepath)
-
-		self.format = os.path.splitext(os.path.basename(filepath))[-1]
 
 	@property
 	def mpp(self):
@@ -71,9 +78,16 @@ class Aslide(object):
 	def properties(self):
 		return self._osr.properties
 
+	# @property
+	# def associated_images(self):
+	# 	return self._osr.associated_images
+
 	@property
-	def associated_images(self):
-		return self._osr.associated_images
+	def label_image(self):
+		if self.format in ['.tmap', '.TMAP']:
+			return self._osr.associated_images('label')
+		else:
+			return self._osr.associated_images.get('label', None)
 
 	def get_best_level_for_downsample(self, downsample):
 		return self._osr.get_best_level_for_downsample(downsample)
@@ -111,21 +125,20 @@ class Aslide(object):
 
 
 if __name__ == '__main__':
-	filepath = '/home/kyfq/test2.kfb'
-	# filepath = '/home/kyfq/SZH00011.TMAP'
+	filepath = '/home/kyfq/test_tiles/Tc11204fff.kfb'
 	slide = Aslide(filepath)
 	# print("Format : ", slide.detect_format(filepath))
 	print("level_count : ", slide.level_count)
 	print("level_dimensions : ", slide.level_dimensions)
 	print("level_downsamples : ", slide.level_downsamples)
 	# print("properties : ", slide.properties)
-	print("Associated Images : ")
-	# for key, val in slide.associated_images.items():
-	# 	print(key, " --> ", val)
+	print("Associated Images : ", slide.label_image)
+	# im = slide.label_image
+	for key, val in slide.label_image.items():
+		print(key, " --> ", val)
 
-	# print("best level for downsample 20 : ", slide.get_best_level_for_downsample(20))
-	# im = slide.read_region((1000, 1000), 4, (1000, 1000))
-	im = slide.read_region((26843, 31319), 0, (1287, 789))
+	print("best level for downsample 20 : ", slide.get_best_level_for_downsample(20))
+	im = slide.read_region((1000, 1000), 4, (1000, 1000))
 	print(im.mode)
 
 	im.show()

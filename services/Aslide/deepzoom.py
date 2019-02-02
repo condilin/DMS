@@ -52,7 +52,7 @@ class ADeepZoomGenerator(object):
 
 
 if __name__ == '__main__':
-    filepath = "/home/kyfq/test.kfb"
+    filepath = "/home/stimage/Development/DATA/TEST_DATA/test001.kfb"
 
     from aslide import Aslide
     slide = Aslide(filepath)
