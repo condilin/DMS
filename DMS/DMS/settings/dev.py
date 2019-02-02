@@ -184,7 +184,7 @@ STATIC_URL = '/static/'
 # ------------------------------ DRF相关配置 ------------------------------ #
 
 REST_FRAMEWORK = {
-    # 解决您的CSRF令牌问题
+    # 解决CSRF令牌问题
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
     ),
