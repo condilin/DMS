@@ -13,7 +13,11 @@ django-filter==1.1.0
 django-rest-swagger==2.2.0
 djangorestframework==3.7.7
 djangorestframework-filters==0.10.2
+dwebsocket==0.5.10
 et-xmlfile==1.0.1
+eventlet==0.17.4
+gevent==1.4.0
+greenlet==0.4.15
 idna==2.8
 ipython==7.2.0
 ipython-genutils==0.2.0
@@ -40,6 +44,7 @@ pyexcel-webio==0.1.4
 pyexcel-xls==0.5.8
 pyexcel-xlsx==0.5.6
 Pygments==2.3.1
+pyinotify==0.9.6
 PyMySQL==0.9.3
 python-dateutil==2.7.5
 pytz==2018.7

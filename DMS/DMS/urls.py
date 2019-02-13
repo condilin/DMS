@@ -26,7 +26,7 @@ urlpatterns = [
     url(r'^api/v1/', include('Case.urls')),  # 病例信息
     url(r'^api/v1/', include('Image.urls')),  # 大图信息
     url(r'^api/v1/', include('FileRenameRecord.urls')),  # 文件更名信息
-    url(r'^api/v1/', include('Diagnosis.urls')),  # 朱博士诊断信息
+    url(r'^api/v1/', include('DiagnoseZhu.urls')),  # 朱博士诊断信息
     url(r'^api/v1/', include('Check.urls')),  # 审核数据信息
     url(r'^api/v1/', include('Train.urls')),  # 训练数据信息
 ]

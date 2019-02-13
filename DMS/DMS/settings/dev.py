@@ -79,8 +79,9 @@ INSTALLED_APPS = [
 
     # 自己的应用
     'Case',
-    'Diagnosis',
+    'DiagnoseZhu',
     'FileRenameRecord',
+    'RenameRecord',
     'Image',
     'Check',
     'Train',
@@ -135,7 +136,7 @@ DATABASES = {
 }
 
 # ------------------------------ 配置上传时文件保存的数据库引擎 ------------------------------ #
-UPLOAD_DB_ENGINE = 'mysql+mysqldb://root:kyfq@localhost:3306/dms?charset=utf8'
+UPLOAD_DB_ENGINE = DOWNLOAD_DB_ENGINE = 'mysql+mysqldb://root:kyfq@localhost:3306/dms?charset=utf8'
 
 
 # Password validation

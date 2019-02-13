@@ -18,7 +18,7 @@ from DMS.settings.dev import DATA_SAMBA_IMAGE_LOCATE, DATA_SAMBA_PREX, TRASH_FIL
 from Image.models import Image
 from Image.serializers import ImageSerializer
 from Case.models import Case
-from Diagnosis.models import Diagnosis
+from DiagnoseZhu.models import DiagnoseZhu
 
 import logging
 logger = logging.getLogger('django')
@@ -30,7 +30,6 @@ class StatisticView(APIView):
     """
 
     def get(self, request):
-        # ----- 病例信息表 ------ #
 
         # 1. 病例数量
         case_count = Case.objects.count()
@@ -85,8 +84,6 @@ class StatisticView(APIView):
         # 3.2 各类占比：
         for num in wp_source_count_list:
             num['wp_source_prop'] = '%.3f' % (num['waveplate_source_count'] / case_count * 100) + '%'
-
-        # ----- 大图信息表 ------ #
 
         # 大图数量
         image_count = Image.objects.filter(is_delete=False).count()
@@ -299,7 +296,8 @@ class UpdateDataBase(APIView):
                                 making_way = None
                             # --------------------- 朱博士最新诊断标签 --------------------- #
                             try:
-                                diagnosis_label_zhu = Diagnosis.objects.get(pathology=pathology).diagnosis_label_lastest
+                                diagnosis_label_zhu = DiagnoseZhu.objects.filter(
+                                    pathology='1606135').order_by('-create_time')[0].his_diagnosis_label
                             except Exception as e:
                                 diagnosis_label_zhu = None
 
