@@ -227,7 +227,7 @@ class EvenHandle(pyinotify.ProcessEvent):
             # --------------------- 朱博士最新诊断标签 --------------------- #
             diagnosis_results = self.query_exist_record(type='diagnosis', pathology=pathology)
             if diagnosis_results:
-                diagnosis_label_zhu = diagnosis_results[0]['diagnosis_label_lastest']
+                diagnosis_label_zhu = diagnosis_results[0]['his_diagnosis_label'].split(',')[0]
             else:
                 diagnosis_label_zhu = None
 
@@ -323,7 +323,7 @@ class FSmonitor(object):
     def suffix_filter(self, event):
         """监视dir中指定的后缀文件及目录"""
 
-        # 判断后缀是否为{'.kfb', '.tiff'}
+        # 判断后缀是否为{'.kfb', '.tiff', '.TMAP', '.tmap'}
         suffix_name = os.path.splitext(event.name)[1]
         # 判断文件夹是否为20X或40X
         dir_name = event.pathname.split(self.path)[1].split('/')[1]
