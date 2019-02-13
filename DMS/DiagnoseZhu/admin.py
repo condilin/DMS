@@ -2,7 +2,7 @@ from django.contrib import admin
 from . import models
 
 
-@admin.register(models.Diagnosis)
+@admin.register(models.DiagnoseZhu)
 class DiagnosisAdmin(admin.ModelAdmin):
 
     # ------ 列表页的显示 ------- #
@@ -13,8 +13,7 @@ class DiagnosisAdmin(admin.ModelAdmin):
     #     return obj.image_info_diagnosis.pathology
 
     # 在文章列表页面显示的字段, 不是详情里面的字段
-    list_display = ['id', 'pathology', 'diagnosis_label_lastest', 'his_diagnosis_label1',
-                    'his_diagnosis_label2', 'create_time', 'update_time']
+    list_display = ['id', 'pathology', 'his_diagnosis_label', 'create_time']
 
     # 设置哪些字段可以点击进入编辑界面
     list_display_links = ('id', 'pathology')
@@ -23,7 +22,7 @@ class DiagnosisAdmin(admin.ModelAdmin):
     list_per_page = 10
 
     # 按最新创建的时间排序. ordering设置默认排序字段，负号表示降序排序
-    ordering = ('-update_time',)
+    ordering = ('-create_time',)
 
     # 搜索栏
     search_fields = ['pathology']
