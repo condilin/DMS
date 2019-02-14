@@ -34,10 +34,10 @@ class CDiagnoseSerializer(serializers.ModelSerializer):
         diagnose = super().create(validated_data)
 
         # ------- 更新大图信息中的朱博士诊断 -------- #
-        image = Image.objects.filter(pathology=diagnose.pathology)
+        # 如何筛选出来有多条大图记录, 则只更新第一条大图记录
+        image = Image.objects.filter(is_delete=False, pathology=diagnose.pathology)[0]
         if image:
-            # 如何筛选出来有多条大图记录, 则只更新第一条大图记录
-            image[0].diagnosis_label_zhu = diagnose.his_diagnosis_label
+            image.diagnosis_label_zhu = diagnose.his_diagnosis_label
             image.save()
 
         # ------- 查询DiagnoseZhu中的数据，经处理后，保存在DiagnoseZhuTmp表中 ------- #
