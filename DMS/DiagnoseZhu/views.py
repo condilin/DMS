@@ -118,8 +118,9 @@ class DownloadFile(APIView):
 
         # 通过指定字段的别名, 指定返回的格式顺序, 下载时默认按字母进行排序
         img_data = DiagnoseZhuTmp.objects.filter(is_delete=False).annotate(
-            c1_病理号=F('pathology'), c2_历史诊断标签列表=F('his_diagnosis_label')).values(
-            'c1_病理号', 'c2_历史诊断标签列表').order_by('pathology', '-create_time')
+            c1_病理号=F('pathology'), c2_历史诊断标签列表=F('his_diagnosis_label'),
+            c3_创建时间=F('create_time')).values(
+            'c1_病理号', 'c2_历史诊断标签列表', 'c3_创建时间').order_by('pathology', '-create_time')
 
         # 命名返回文件名字
         file_name_add_date = '朱博士诊断信息_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)

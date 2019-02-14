@@ -6,6 +6,7 @@
 
 from rest_framework import serializers
 from .models import DiagnoseZhu, DiagnoseZhuTmp
+from Image.models import Image
 import pandas as pd
 from django.forms.models import model_to_dict
 
@@ -14,7 +15,7 @@ class SDiagnoseSerializer(serializers.ModelSerializer):
     """查"""
 
     class Meta:
-        model = DiagnoseZhu
+        model = DiagnoseZhuTmp
         fields = ('id', 'pathology', 'his_diagnosis_label')
 
 
@@ -31,6 +32,13 @@ class CDiagnoseSerializer(serializers.ModelSerializer):
 
         # 调用父类的方法向DiagnoseZhu表中添加一条记录
         diagnose = super().create(validated_data)
+
+        # ------- 更新大图信息中的朱博士诊断 -------- #
+        image = Image.objects.filter(pathology=diagnose.pathology)
+        if image:
+            # 如何筛选出来有多条大图记录, 则只更新第一条大图记录
+            image[0].diagnosis_label_zhu = diagnose.his_diagnosis_label
+            image.save()
 
         # ------- 查询DiagnoseZhu中的数据，经处理后，保存在DiagnoseZhuTmp表中 ------- #
         # 获取没有逻辑删除的数据, 并按病理号, 创建时间降序排序
