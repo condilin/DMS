@@ -224,7 +224,7 @@ class DownloadModelInfoFile(APIView):
             'c27_训练步数', 'c28_损失', 'c29_准确率', 'c30_最好的轮数')
 
         # 命名返回文件名字
-        file_name_add_date = '训练信息_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
+        file_name_add_date = '模型训练信息_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
         # 返回对应格式的文件
         return excel.make_response_from_records(train_data, file_type=suffix_name, file_name=file_name_add_date)
 
@@ -252,7 +252,7 @@ class DownloadTrainedImageFile(APIView):
             c1_已训练大图文件名=F('file_name')).values('c1_已训练大图文件名')
 
         # 命名返回文件名字
-        file_name_add_date = '训练信息_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
+        file_name_add_date = '已训练的大图列表_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
         # 返回对应格式的文件
         return excel.make_response_from_records(trained_data, file_type=suffix_name, file_name=file_name_add_date)
 
