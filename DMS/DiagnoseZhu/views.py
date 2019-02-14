@@ -12,7 +12,6 @@ import os
 import time
 import django_excel as excel
 # import pandas as pd
-# from django.forms.models import model_to_dict
 # from sqlalchemy import create_engine
 # from DMS.settings.dev import UPLOAD_DB_ENGINE
 # from DMS.utils.uploads import save_upload_file
