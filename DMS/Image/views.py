@@ -145,7 +145,7 @@ class DownloadFile(APIView):
     :parameter:
         type: 指定下载的格式, csv/xlsx/xls
     :example:
-        /api/v1/cases/downloads/?type=csv
+        /api/v1/images/downloads/?type=csv
     """
 
     def get(self, request):
@@ -297,7 +297,7 @@ class UpdateDataBase(APIView):
                             # --------------------- 朱博士最新诊断标签 --------------------- #
                             try:
                                 diagnosis_label_zhu = DiagnoseZhu.objects.filter(
-                                    pathology='1606135').order_by('-create_time')[0].his_diagnosis_label
+                                    pathology=pathology).order_by('-create_time')[0].his_diagnosis_label
                             except Exception as e:
                                 diagnosis_label_zhu = None
 
