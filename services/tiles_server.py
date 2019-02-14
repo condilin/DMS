@@ -91,8 +91,12 @@ async def tiles_png(request, image_id, format):
 
     bio = BytesIO()
     label_image = slide.label_image
-    label_image.save(bio, 'png')
-    image_bytes = bio.getvalue()
+    # 如果标签存在则保存
+    if label_image:
+        label_image.save(bio, 'png')
+        image_bytes = bio.getvalue()
+    else:
+        image_bytes = b''
 
     headers = {}
     headers.setdefault(
