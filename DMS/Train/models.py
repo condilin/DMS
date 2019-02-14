@@ -2,7 +2,7 @@ from django.db import models
 
 
 class Train(models.Model):
-    """训练数据信息"""
+    """模型训练信息"""
 
     id = models.AutoField(primary_key=True, verbose_name=u'唯一主键')
     # 基本数据
@@ -36,8 +36,26 @@ class Train(models.Model):
 
     class Meta:
         db_table = 'tb_train_info'  # 自定义数据库表的名称
-        verbose_name = '训练数据'  # 在后台admin中显示表的中文名
+        verbose_name = '模型训练信息'  # 在后台admin中显示表的中文名
         verbose_name_plural = verbose_name
 
     def __str__(self):
         return '训练数据版本为：%s' % self.train_version
+
+
+class TrainedImage(models.Model):
+    """已经过模型训练的大图"""
+
+    file_name = models.CharField(max_length=128, verbose_name=u'病理号', null=True, blank=True)
+
+    is_delete = models.BooleanField(verbose_name='是否逻辑删除', default=False)
+    create_time = models.DateTimeField(verbose_name=u'创建时间', auto_now_add=True)
+    update_time = models.DateTimeField(verbose_name=u'更新时间', auto_now=True)
+
+    class Meta:
+        db_table = 'tb_trained_image'  # 自定义数据库表的名称
+        verbose_name = '已经过模型训练的大图'  # 在后台admin中显示表的中文名
+        verbose_name_plural = verbose_name
+
+    def __str__(self):
+        return '已训练的大图文件名为：%s' % self.file_name

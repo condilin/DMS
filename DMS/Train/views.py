@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.generics import ListCreateAPIView
+from rest_framework.generics import ListAPIView, ListCreateAPIView
 from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import FilterSet, CharFilter
 from rest_framework.filters import OrderingFilter, SearchFilter
@@ -13,17 +13,19 @@ import time
 import django_excel as excel
 import pandas as pd
 from sqlalchemy import create_engine
+from django.forms.models import model_to_dict
 from DMS.settings.dev import UPLOAD_DB_ENGINE
 from DMS.utils.uploads import save_upload_file
 
-from Train.models import Train
-from Train.serializers import TrainSerializer
+from Train.models import Train, TrainedImage
+from Train.serializers import TrainSerializer, TrainedImageSerializer
+from Image.models import Image
 
 import logging
 logger = logging.getLogger('django')
 
 
-class UploadFile(APIView):
+class UploadModelInfoFile(APIView):
     """
     post: 上传csv/excel格式的数据
     """
@@ -99,7 +101,96 @@ class UploadFile(APIView):
             return Response(status=status.HTTP_201_CREATED, data={"msg": '上传成功！'})
 
 
-class DownloadFile(APIView):
+class UploadTrainedImageFile(APIView):
+    """
+    post: 上传txt/csv/excel格式的数据
+    """
+
+    def post(self, request):
+
+        # 获取上传的文件, 'file'值是前端页面input框的name属性的值
+        _file = request.FILES.get('file', None)
+        # 如果获取不到内容, 则说明上传失败
+        if not _file:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"msg": '文件上传失败！'})
+
+        # ---------- 保存上传文件 ---------- #
+
+        # 获取文件的后缀名, 判断上传文件是否符合格式要求
+        suffix_name = os.path.splitext(_file.name)[1]
+        if suffix_name in ['.txt', '.csv', '.xls', '.xlsx']:
+            upload_file_rename = save_upload_file(_file)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"msg": '请上传txt或csv或excel格式的文件！'})
+
+        # ---------- 读取上传文件数据 ---------- #
+        # excel格式
+        if suffix_name in ['.xls', '.xlsx']:
+            data = pd.read_excel(upload_file_rename)
+        # csv格式
+        elif suffix_name == '.csv':
+            data = pd.read_csv(upload_file_rename)
+        # txt格式
+        else:
+            data = pd.read_table(upload_file_rename)
+
+        # ---------- 删除上传文件数据 ---------- #
+        os.remove(upload_file_rename)
+
+        # ---------- 自定义列名以及增加列字段值 ---------- #
+        # 重新定义表中字段的列名, 因为插入数据库时，时按表中的字段对应一一插入到数据库中的，因此列名要与数据库中保持一致
+        column_name = ['file_name']
+        data.columns = column_name
+
+        # 保存到数据库前，手动添加is_delete列与时间列
+        data['is_delete'] = False
+        data['create_time'] = time.strftime("%Y-%m-%d %H:%M:%S")
+        data['update_time'] = time.strftime("%Y-%m-%d %H:%M:%S")
+
+        # ----------- 保存结果到数据库 ----------- #
+        # 开启事务
+        with transaction.atomic():
+            # 创建保存点
+            save_id = transaction.savepoint()
+
+            try:
+                # 删除表中没有逻辑删除的记录,那些已逻辑删除的要保存记录下来
+                TrainedImage.objects.filter(is_delete=False).delete()
+
+                # 将数据写入mysql的数据库，但需要先通过sqlalchemy.create_engine建立连接,且字符编码设置为utf8，否则有些latin字符不能处理
+                con = create_engine(UPLOAD_DB_ENGINE)
+                # chunksize:
+                # 如果data的数据量太大，数据库无法响应可能会报错，这时候就可以设置chunksize，比如chunksize = 1000，data就会一次1000的循环写入数据库。
+                # if_exists:
+                # 如果表中有数据，则追加
+                # index:
+                # index=False，则不将dataframe中的index列保存到数据库
+                data.to_sql('tb_trained_image', con, if_exists='append', index=False, chunksize=1000)
+
+                # 同时更新大图中的是否学习字段
+                # 已训练的大图列表
+                trained_image_set = set(list(data['file_name']))
+                # 查询大图表中的大图
+                image_file_name = Image.objects.values('file_name')
+                image_file_name_set = set([i['file_name'] for i in image_file_name])
+                # 已训练的大图哪些在大图中(求交集)
+                intersect_image = trained_image_set.intersection(image_file_name_set)
+
+                # 批量更新, 将匹配到的大图中的is_learn改为True
+                Image.objects.filter(pathology__in=intersect_image).update(is_learn=True)
+
+            except Exception as e:
+                logging.error(e)
+                transaction.savepoint_rollback(save_id)
+                return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data={"msg": '导入数据库失败！'})
+
+            # 提交事务
+            transaction.savepoint_commit(save_id)
+
+            return Response(status=status.HTTP_201_CREATED, data={"msg": '上传成功！'})
+
+
+class DownloadModelInfoFile(APIView):
     """
     get: 导出csv/excel数据
     :parameter:
@@ -118,7 +209,7 @@ class DownloadFile(APIView):
             return Response(status=status.HTTP_400_BAD_REQUEST, data={'msg': '仅支持下载csv和excel格式！'})
 
         # 通过指定字段的别名, 指定返回的格式顺序, 下载时默认按字母进行排序
-        img_data = Train.objects.filter(is_delete=False).annotate(
+        train_data = Train.objects.filter(is_delete=False).annotate(
             c11_训练数据版本=F('train_version'), c12_训练数据集=F('train_dataset'),
             c13_细胞分类数量=F('cells_classify_num'), c14_原始数据集细胞数量=F('dataset_cells_num'),
             c15_使用的权重=F('weight'), c16_目标模型=F('target_model'), c17_饱和度=F('saturation'),
@@ -135,7 +226,35 @@ class DownloadFile(APIView):
         # 命名返回文件名字
         file_name_add_date = '训练信息_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
         # 返回对应格式的文件
-        return excel.make_response_from_records(img_data, file_type=suffix_name, file_name=file_name_add_date)
+        return excel.make_response_from_records(train_data, file_type=suffix_name, file_name=file_name_add_date)
+
+
+class DownloadTrainedImageFile(APIView):
+    """
+    get: 导出csv/excel数据
+    :parameter:
+        type: 指定下载的格式, csv/xlsx/xls
+    :example:
+        /api/v1/trains/downloads/trained/?type=csv
+    """
+
+    def get(self, request):
+
+        suffix_name = request.GET.get('type', None)
+        if not suffix_name:
+            return Response(status=status.HTTP_403_FORBIDDEN, data={'msg': '请求参数错误！'})
+
+        if suffix_name not in ['csv', 'xlsx', 'xls']:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={'msg': '仅支持下载csv和excel格式！'})
+
+        # 通过指定字段的别名, 指定返回的格式顺序, 下载时默认按字母进行排序
+        trained_data = TrainedImage.objects.filter(is_delete=False).annotate(
+            c1_已训练大图文件名=F('file_name')).values('c1_已训练大图文件名')
+
+        # 命名返回文件名字
+        file_name_add_date = '训练信息_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
+        # 返回对应格式的文件
+        return excel.make_response_from_records(trained_data, file_type=suffix_name, file_name=file_name_add_date)
 
 
 class TrainFilter(FilterSet):
@@ -148,10 +267,20 @@ class TrainFilter(FilterSet):
         fields = ['train_version']
 
 
+class TrainedImageFilter(FilterSet):
+    """搜索类"""
+
+    file_name = CharFilter(lookup_expr='icontains')  # 模糊搜索
+
+    class Meta:
+        model = TrainedImage
+        fields = ['file_name']
+
+
 class SCTrainView(ListCreateAPIView):
     """
-    get: 查询训练数据记录列表
-    post: 创建一条训练数据记录
+    get: 查询模型训练信息记录列表
+    post: 创建一条模型训练信息记录
     """
 
     # 指定查询集, 获取没有逻辑删除的数据
@@ -168,6 +297,27 @@ class SCTrainView(ListCreateAPIView):
     ordering_fields = ('train_version',)
     # 指定可以被搜索字段
     filter_class = TrainFilter
+
+
+class STrainedImageView(ListAPIView):
+    """
+    get: 查询已训练大图数据记录列表
+    """
+
+    # 指定查询集, 获取没有逻辑删除的数据
+    queryset = TrainedImage.objects.filter(is_delete=False)
+
+    # 指定序列化器
+    serializer_class = TrainedImageSerializer
+
+    # OrderingFilter：指定排序的过滤器,可以按任意字段排序,通过在路由中通过ordering参数控制,如：?ordering=id
+    # DjangoFilterBackend对应filter_fields属性，做相等查询
+    # SearchFilter对应search_fields，对应模糊查询
+    filter_backends = [OrderingFilter, DjangoFilterBackend, SearchFilter]
+    # 默认指定按哪个字段进行排序
+    ordering_fields = ('file_name',)
+    # 指定可以被搜索字段
+    filter_class = TrainedImageFilter
 
 
 class SUDTrainView(APIView):

@@ -6,7 +6,7 @@
 
 
 from rest_framework import serializers
-from .models import Train
+from .models import Train, TrainedImage
 
 
 class TrainSerializer(serializers.ModelSerializer):
@@ -18,3 +18,11 @@ class TrainSerializer(serializers.ModelSerializer):
                   'dataset_cells_num', 'weight', 'target_model', 'saturation',
                   'lightness', 'rotation', 'padding', 'size', 'background', 'init_lr',
                   'decay', 'epoch', 'batch', 'final_step', 'loss', 'accuracy', 'best_epoch')
+
+
+class TrainedImageSerializer(serializers.ModelSerializer):
+    """查"""
+
+    class Meta:
+        model = TrainedImage
+        fields = ('id', 'file_name')
