@@ -19,6 +19,7 @@ from DMS.utils.uploads import save_upload_file
 
 from Case.models import Case
 from Case.serializers import CaseSerializer, SearchDupCaseSerializer
+from Image.models import Image
 
 import logging
 logger = logging.getLogger('django')
@@ -279,6 +280,22 @@ class SUDCaseView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
+        # ----- 医生的诊断标签同步到大图表中 ----- #
+        # 获取病理号
+        case_pathology = request.data['pathology']
+        # 根据病理号, 查询所有的医生诊断标签, 并使用,号进行拼接
+        case_res = Case.objects.filter(pathology=case_pathology, is_delete=False)
+        diagnosis_label_doctor_list = [i.diagnosis_label_doctor for i in case_res if i.diagnosis_label_doctor is not None]
+        diagnosis_label_doctor_str = '+'.join(diagnosis_label_doctor_list) if diagnosis_label_doctor_list else None
+
+        # 根据病理号查询大图记录
+        image = Image.objects.filter(pathology=case_pathology, is_delete=False)
+        # 如果在大图中匹配到病例信息中的病理号, 则同步修改大图; 如果有多条, 则全部修改成一样
+        if image:
+            for i in image:
+                i.diagnosis_label_doctor = diagnosis_label_doctor_str
+                i.save()
+
         return Response(serializer.data)
 
     def delete(self, request, pk):
@@ -291,6 +308,22 @@ class SUDCaseView(APIView):
         # 逻辑删除, .save方法适合于单条记录的保存, 而.update方法适用于批量数据的保存
         case.is_delete = True
         case.save()
+
+        # ----- 医生的诊断标签同步到大图表中 ----- #
+        # 获取病理号
+        case_pathology = case.pathology
+        # 根据病理号, 查询所有的医生诊断标签, 并使用,号进行拼接
+        case_res = Case.objects.filter(pathology=case_pathology, is_delete=False)
+        diagnosis_label_doctor_list = [i.diagnosis_label_doctor for i in case_res if i.diagnosis_label_doctor is not None]
+        diagnosis_label_doctor_str = '+'.join(diagnosis_label_doctor_list) if diagnosis_label_doctor_list else None
+
+        # 根据病理号查询大图记录
+        image = Image.objects.filter(pathology=case_pathology, is_delete=False)
+        # 如果在大图中匹配到病例信息中的病理号, 则同步修改大图; 如果有多条, 则全部修改成一样
+        if image:
+            for i in image:
+                i.diagnosis_label_doctor = diagnosis_label_doctor_str
+                i.save()
 
         return Response(status=status.HTTP_204_NO_CONTENT, data={'msg': '删除成功！'})
 
