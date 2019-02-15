@@ -332,10 +332,10 @@ class ImageFilter(FilterSet):
 
     id = CharFilter(lookup_expr='iexact')  # 精确查询
     pathology = CharFilter(lookup_expr='icontains')  # 模糊查询（包含），并且忽略大小写
-    file_name = CharFilter(lookup_expr='iexact')  # 模糊查询（包含），并且忽略大小写
+    file_name = CharFilter(lookup_expr='icontains')  # 模糊查询（包含），并且忽略大小写
     resolution = CharFilter(lookup_expr='iexact')  # 精确查询
     storage_path = CharFilter(lookup_expr='iexact')  # 精确查询
-    waveplate_source = CharFilter(lookup_expr='icontains')  # 精确查询
+    waveplate_source = CharFilter(lookup_expr='icontains')  # 模糊查询（包含），并且忽略大小写
     diagnosis_label_doctor = CharFilter(lookup_expr='icontains')  # 模糊查询（包含），并且忽略大小写
     diagnosis_label_zhu = CharFilter(lookup_expr='icontains')  # 模糊查询（包含），并且忽略大小写
     is_learn = CharFilter(lookup_expr='iexact')  # 精确查询
