@@ -7,11 +7,10 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import FilterSet, CharFilter
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django.db import transaction
-from django.db.models import Count, F
+from django.db.models import Count, F, Q
 
-import os
-import time
-import re
+import os, time, re
+from collections import Counter
 import django_excel as excel
 from DMS.settings.dev import DATA_SAMBA_IMAGE_LOCATE, DATA_SAMBA_PREX, TRASH_FILE_PATH
 
@@ -31,34 +30,65 @@ class StatisticView(APIView):
 
     def get(self, request):
 
-        # 1. 病例数量
-        case_count = Case.objects.count()
+        # 1. 病例/大图数量
+        case_count = Case.objects.filter(is_delete=False).count()
+        image_count = Image.objects.filter(is_delete=False).count()
 
-        # 2. 诊断结果标签
+        # 2. 病例诊断结果标签
 
         # 2.1 各类数量：
-        # 统计各类标签不含null值的个数
-        diag_label_count = Case.objects.filter(is_delete=False, diagnosis_label_doctor_filter__isnull=False).values(
-            'diagnosis_label_doctor_filter').annotate(
-            diagnosis_label_count=Count('diagnosis_label_doctor_filter')
-        ).order_by('diagnosis_label_count')
+        # # 统计各类标签不含null值的个数
+        # diag_label_count = Case.objects.filter(is_delete=False, diagnosis_label_doctor_filter__isnull=False).values(
+        #     'diagnosis_label_doctor_filter').annotate(
+        #     diagnosis_label_count=Count('diagnosis_label_doctor_filter')
+        # ).order_by('diagnosis_label_count')
+        #
+        # # 统计各类标签为null值的个数
+        # label_null_count = Case.objects.filter(is_delete=False, diagnosis_label_doctor_filter__isnull=True).count()
+        # label_null_dict = {
+        #     'diagnosis_label_count': label_null_count,
+        #     'diagnosis_label_doctor': None
+        # }
+        #
+        # # 合并并转换成列表
+        # diag_label_count_list = list(diag_label_count)
+        # # 如果有空值, 则把空值的统计也添加上, 否则不需要统计空值的个数及占比
+        # if diag_label_count:
+        #     diag_label_count_list.append(label_null_dict)
 
-        # 统计各类标签为null值的个数
-        label_null_count = Case.objects.filter(is_delete=False, diagnosis_label_doctor_filter__isnull=True).count()
-        label_null_dict = {
-            'diagnosis_label_count': label_null_count,
-            'diagnosis_label_doctor': None
-        }
+        # # 2.2 各类占比：
+        # for num in diag_label_count_list:
+        #     num['label_prop'] = '%.3f' % (num['diagnosis_label_count'] / case_count * 100) + '%'
 
-        # 合并并转换成列表
-        diag_label_count_list = list(diag_label_count)
-        # 如果有空值, 则把空值的统计也添加上, 否则不需要统计空值的个数及占比
-        if diag_label_count:
-            diag_label_count_list.append(label_null_dict)
+        # 2. 大图诊断结果标签
 
-        # 2.2 各类占比：
-        for num in diag_label_count_list:
-            num['label_prop'] = '%.3f' % (num['diagnosis_label_count'] / case_count * 100) + '%'
+        # 查询朱博士诊断不为空或医生诊断不为空的记录
+        all_diagnosis_label = Image.objects.filter(
+            Q(is_delete=False), Q(diagnosis_label_doctor__isnull=False) | Q(diagnosis_label_zhu__isnull=False)
+        )
+        # 则诊断记录均为Null的记录数
+        # null_count = image_count - all_diagnosis_label.count()
+
+        # 初始化列表, 用于存储所有的诊断结果, 优先朱博士诊断
+        diagnosis_label_list = []
+        for diag in all_diagnosis_label:
+            if diag.diagnosis_label_zhu:
+                # 数据清洗
+                # 1.如果诊断结果有LiSIL+ASCUS, 则取+前第一个
+                # 2.去除两边的空格 3.统一转换成大写 4.AGC1/AGC2统一为AGC,因此要统一将数字去掉
+                diagnosis_label_list.append(diag.diagnosis_label_zhu.split('+')[0].strip().upper().strip('123'))
+            else:
+                diagnosis_label_list.append(diag.diagnosis_label_doctor.split('+')[0].strip().upper().strip('123'))
+
+        # 统计每个分类的个数
+        diag_label_dict = dict(Counter(diagnosis_label_list))
+        diag_label_count_list = []
+        # 转换成列表字典格式
+        for label, count in diag_label_dict.items():
+            tmp_dict = {}
+            tmp_dict['diagnosis_label'] = label
+            tmp_dict['diagnosis_label_count'] = count
+            diag_label_count_list.append(tmp_dict)
 
         # 3.片源
 
@@ -84,9 +114,6 @@ class StatisticView(APIView):
         # 3.2 各类占比：
         for num in wp_source_count_list:
             num['wp_source_prop'] = '%.3f' % (num['waveplate_source_count'] / case_count * 100) + '%'
-
-        # 大图数量
-        image_count = Image.objects.filter(is_delete=False).count()
 
         # 4. 倍数
 
