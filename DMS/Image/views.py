@@ -352,7 +352,7 @@ class SImageView(ListCreateAPIView):
     """
 
     # 指定查询集, 获取没有逻辑删除的数据
-    queryset = Image.objects.filter(is_delete=False)
+    queryset = Image.objects.filter(is_delete=False).order_by('-scan_time')
 
     # 指定序列化器
     serializer_class = ImageSerializer
