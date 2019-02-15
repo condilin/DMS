@@ -211,11 +211,17 @@ class EvenHandle(pyinotify.ProcessEvent):
             scan_time = self.timestamp_to_time(file_create_time_ts)
             # --------------------- 是否学习 --------------------- #
             # is_learn = True if file_name in train_data_file_name else False
-            # --------------------- 查询病例信息(片源,制式,医生诊断) --------------------- #
+            # --------------------- 查询病例信息(制式,医生诊断) --------------------- #
             case_results = self.query_exist_record(type='case', pathology=pathology)
             if case_results:
                 if len(case_results) >= 2:
-                    diagnosis_label_doctor = '?: %s条病例信息' % len(case_results)
+                    # 根据病理号, 查询所有的医生诊断标签, 并使用,号进行拼接
+                    diagnosis_label_doctor_list = [i['diagnosis_label_doctor'] for i in case_results if
+                                                   i['diagnosis_label_doctor'] is not None]
+                    diagnosis_label_doctor_str = '+'.join(
+                        diagnosis_label_doctor_list) if diagnosis_label_doctor_list else None
+
+                    diagnosis_label_doctor = diagnosis_label_doctor_str
                     making_way = [i['making_way'] for i in case_results if i['making_way']][0]
                 else:
                     diagnosis_label_doctor = case_results[0]['diagnosis_label_doctor']
