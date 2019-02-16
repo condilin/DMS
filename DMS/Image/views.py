@@ -66,8 +66,9 @@ class StatisticView(APIView):
         all_diagnosis_label = Image.objects.filter(
             Q(is_delete=False), Q(diagnosis_label_doctor__isnull=False) | Q(diagnosis_label_zhu__isnull=False)
         )
-        # 则诊断记录均为Null的记录数
-        # null_count = image_count - all_diagnosis_label.count()
+        # 有医生或朱博士诊断标签的 及 诊断记录均为Null的记录数
+        has_diagnosis_count = all_diagnosis_label.count()
+        # diagnosis_null_count = image_count - has_diagnosis_count
 
         # 初始化列表, 用于存储所有的诊断结果, 优先朱博士诊断
         diagnosis_label_list = []
@@ -135,6 +136,7 @@ class StatisticView(APIView):
         result_dict = {
             'case_count': case_count,
             'image_count': image_count,
+            'has_diagnosis_count': has_diagnosis_count,
             'diag_label_count': diag_label_count_list,
             'waveplate_source_count': wp_source_count_list,
             'resolution_count': resolution_count_list
@@ -393,6 +395,38 @@ class SImageView(ListCreateAPIView):
     ordering_fields = ('pathology', )
     # 指定可以被搜索字段
     filter_class = ImageFilter
+
+
+class SDoctorZhuDiagnoseView(APIView):
+    """
+    get: 查询朱博士或医生有诊断标签的大图记录
+    """
+
+    def get(self, request, diagnose_label):
+
+        # 查询朱博士或医生有诊断标签的大图记录
+        image = Image.objects.filter(
+            Q(is_delete=False),
+            Q(diagnosis_label_doctor__icontains=diagnose_label) | Q(diagnosis_label_zhu__icontains=diagnose_label)
+        )
+
+        if not image:
+            return Response(status=status.HTTP_404_NOT_FOUND, data={'msg': '该诊断标签不存在！'})
+
+        # 创建分页对象
+        pg = LimitOffsetPagination()
+
+        # 获取分页的数据
+        page_roles = pg.paginate_queryset(queryset=image, request=request, view=self)
+
+        # 序列化返回
+        # 查询多条重复记录, 因此需要指定many=True, 并指定instance
+        serializer = ImageSerializer(instance=page_roles, many=True)
+
+        # 不含上一页和下一页，要手动的在url中传参limit和offset来控制第几页
+        # return Response(status=status.HTTP_200_OK, data=serializer.data)
+        # 使用get_paginated_response, 则含上一页和下一页
+        return pg.get_paginated_response(data=serializer.data)
 
 
 class SUDImageView(APIView):
