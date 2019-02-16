@@ -34,32 +34,6 @@ class StatisticView(APIView):
         case_count = Case.objects.filter(is_delete=False).count()
         image_count = Image.objects.filter(is_delete=False).count()
 
-        # 2. 病例诊断结果标签
-
-        # 2.1 各类数量：
-        # # 统计各类标签不含null值的个数
-        # diag_label_count = Case.objects.filter(is_delete=False, diagnosis_label_doctor_filter__isnull=False).values(
-        #     'diagnosis_label_doctor_filter').annotate(
-        #     diagnosis_label_count=Count('diagnosis_label_doctor_filter')
-        # ).order_by('diagnosis_label_count')
-        #
-        # # 统计各类标签为null值的个数
-        # label_null_count = Case.objects.filter(is_delete=False, diagnosis_label_doctor_filter__isnull=True).count()
-        # label_null_dict = {
-        #     'diagnosis_label_count': label_null_count,
-        #     'diagnosis_label_doctor': None
-        # }
-        #
-        # # 合并并转换成列表
-        # diag_label_count_list = list(diag_label_count)
-        # # 如果有空值, 则把空值的统计也添加上, 否则不需要统计空值的个数及占比
-        # if diag_label_count:
-        #     diag_label_count_list.append(label_null_dict)
-
-        # # 2.2 各类占比：
-        # for num in diag_label_count_list:
-        #     num['label_prop'] = '%.3f' % (num['diagnosis_label_count'] / case_count * 100) + '%'
-
         # 2. 大图诊断结果标签
 
         # 查询朱博士诊断不为空或医生诊断不为空的记录
