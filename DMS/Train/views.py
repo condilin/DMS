@@ -50,10 +50,10 @@ class UploadModelInfoFile(APIView):
         # ---------- 读取上传文件数据 ---------- #
         # excel格式
         if suffix_name in ['.xls', '.xlsx']:
-            data = pd.read_excel(upload_file_rename)
+            data = pd.read_excel(upload_file_rename, header=None)
         # csv格式
         else:
-            data = pd.read_csv(upload_file_rename)
+            data = pd.read_csv(upload_file_rename, header=None)
 
         # ---------- 删除上传文件数据 ---------- #
         os.remove(upload_file_rename)
@@ -126,13 +126,13 @@ class UploadTrainedImageFile(APIView):
         # ---------- 读取上传文件数据 ---------- #
         # excel格式
         if suffix_name in ['.xls', '.xlsx']:
-            data = pd.read_excel(upload_file_rename)
+            data = pd.read_excel(upload_file_rename, header=None)
         # csv格式
         elif suffix_name == '.csv':
-            data = pd.read_csv(upload_file_rename)
+            data = pd.read_csv(upload_file_rename, header=None)
         # txt格式
         else:
-            data = pd.read_table(upload_file_rename)
+            data = pd.read_table(upload_file_rename, header=None)
 
         # ---------- 删除上传文件数据 ---------- #
         os.remove(upload_file_rename)
@@ -249,7 +249,7 @@ class DownloadTrainedImageFile(APIView):
 
         # 通过指定字段的别名, 指定返回的格式顺序, 下载时默认按字母进行排序
         trained_data = TrainedImage.objects.filter(is_delete=False).annotate(
-            c1_已训练大图文件名=F('file_name')).values('c1_已训练大图文件名')
+            image_file_name=F('file_name')).values('image_file_name')
 
         # 命名返回文件名字
         file_name_add_date = '已训练的大图列表_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
