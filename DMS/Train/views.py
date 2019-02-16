@@ -177,7 +177,8 @@ class UploadTrainedImageFile(APIView):
                 intersect_image = trained_image_set.intersection(image_file_name_set)
 
                 # 批量更新, 将匹配到的大图中的is_learn改为True
-                Image.objects.filter(pathology__in=intersect_image).update(is_learn=True)
+                # 注意这里要使用文件名, 而不能使用病理号, 因此有病理号为TC17001535, 而文件名可能为:TC17001535,TC17001535_1等
+                Image.objects.filter(file_name__in=intersect_image).update(is_learn=True)
 
             except Exception as e:
                 logging.error(e)
