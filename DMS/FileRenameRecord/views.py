@@ -48,10 +48,10 @@ class UploadFile(APIView):
         # ---------- 读取上传文件数据 ---------- #
         # excel格式
         if suffix_name in ['.xls', '.xlsx']:
-            data = pd.read_excel(upload_file_rename, header=None)
+            data = pd.read_excel(upload_file_rename)
         # csv格式
         else:
-            data = pd.read_csv(upload_file_rename, header=None)
+            data = pd.read_csv(upload_file_rename)
 
         # ---------- 删除上传文件数据 ---------- #
         os.remove(upload_file_rename)
