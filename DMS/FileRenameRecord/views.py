@@ -116,7 +116,7 @@ class DownloadFile(APIView):
             return Response(status=status.HTTP_400_BAD_REQUEST, data={'msg': '仅支持下载csv和excel格式！'})
 
         # 通过指定字段的别名, 指定返回的格式顺序, 下载时默认按字母进行排序
-        img_data = FileRenameRecord.objects.filter(is_delete=False).annotate(
+        rename_data = FileRenameRecord.objects.filter(is_delete=False).annotate(
             c1_病理号=F('pathology'), c2_当前文件名=F('current_file_name'),
             c3_历史曾用名1=F('his_name1'), c4_历史曾用名2=F('his_name2'),
             c5_历史曾用名3=F('his_name3'), c6_历史曾用名4=F('his_name4'),
@@ -126,8 +126,13 @@ class DownloadFile(APIView):
 
         # 命名返回文件名字
         file_name_add_date = '文件更名记录_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
+
         # 返回对应格式的文件
-        return excel.make_response_from_records(img_data, file_type=suffix_name, file_name=file_name_add_date)
+        # 返回csv格式使用make_response_from_records会出现中文乱码, 而使用make_response_from_query_sets则没问题
+        if suffix_name == 'csv':
+            return excel.make_response_from_query_sets(rename_data, file_type=suffix_name, file_name=file_name_add_date)
+        else:
+            return excel.make_response_from_records(rename_data, file_type=suffix_name, file_name=file_name_add_date)
 
 
 class FindDuplicateFileName(APIView):

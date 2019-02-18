@@ -226,8 +226,13 @@ class DownloadModelInfoFile(APIView):
 
         # 命名返回文件名字
         file_name_add_date = '模型训练信息_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
+
         # 返回对应格式的文件
-        return excel.make_response_from_records(train_data, file_type=suffix_name, file_name=file_name_add_date)
+        # 返回csv格式使用make_response_from_records会出现中文乱码, 而使用make_response_from_query_sets则没问题
+        if suffix_name == 'csv':
+            return excel.make_response_from_query_sets(train_data, file_type=suffix_name, file_name=file_name_add_date)
+        else:
+            return excel.make_response_from_records(train_data, file_type=suffix_name, file_name=file_name_add_date)
 
 
 class DownloadTrainedImageFile(APIView):
