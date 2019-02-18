@@ -78,7 +78,7 @@ class UploadFile(APIView):
 
             try:
                 # 删除表中没有逻辑删除的记录,那些已逻辑删除的要保存记录下来
-                Case.objects.filter(is_delete=False).delete()
+                # Case.objects.filter(is_delete=False).delete()
 
                 # 将数据写入mysql的数据库，但需要先通过sqlalchemy.create_engine建立连接,且字符编码设置为utf8，否则有些latin字符不能处理
                 con = create_engine(UPLOAD_DB_ENGINE)
@@ -177,7 +177,9 @@ class DownloadDuplicateName(APIView):
         # 返回csv格式使用make_response_from_records会出现中文乱码,
         # pyexcel主要用于上传下载excel类型的数据,因此要改用其它框架django-queryset-csv
         if suffix_name == 'csv':
-            return render_to_csv_response(duplicate_case_data, filename=file_name_add_date)
+            # 指定返回字段的顺序
+            field_name_list = sorted(list(duplicate_case_data[0].keys()))
+            return render_to_csv_response(duplicate_case_data, filename=file_name_add_date, field_order=field_name_list)
         else:
             return excel.make_response_from_records(duplicate_case_data, file_type=suffix_name, file_name=file_name_add_date)
 
