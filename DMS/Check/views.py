@@ -11,6 +11,7 @@ from django.db.models import F
 import os
 import time
 import django_excel as excel
+from djqscsv import render_to_csv_response
 from collections import Counter
 import xml.dom.minidom
 from DMS.settings.dev import DATA_SAMBA_PREX, BATCH6_XMLS_PATH, BATCH6_1_XMLS_PATH, \
@@ -68,14 +69,20 @@ class DownloadFile(APIView):
             return Response(status=status.HTTP_400_BAD_REQUEST, data={'msg': '仅支持下载csv和excel格式！'})
 
         # 通过指定字段的别名, 指定返回的格式顺序, 下载时默认按字母进行排序
-        img_data = CheckDetail.objects.filter(is_delete=False).annotate(
+        check_data = CheckDetail.objects.filter(is_delete=False).annotate(
             c1_审核版本号=F('check_version_number'), c2_大图名称=F('image'), c3_分类标签=F('classify'),
             c4_数量=F('class_number')).values('c1_审核版本号', 'c2_大图名称', 'c3_分类标签', 'c4_数量')
 
-        # 命名返回文件名字
-        file_name_add_date = '训练详情信息_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
+        # 命名返回文件名字(django-queryset-csv插件使用中文名字返回时会去掉, 使用英文则不会)
+        file_name_add_date = 'ckeck_detail_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
+
         # 返回对应格式的文件
-        return excel.make_response_from_records(img_data, file_type=suffix_name, file_name=file_name_add_date)
+        # 返回csv格式使用make_response_from_records会出现中文乱码,
+        # pyexcel主要用于上传下载excel类型的数据,因此要改用其它框架django-queryset-csv
+        if suffix_name == 'csv':
+            return render_to_csv_response(check_data, filename=file_name_add_date)
+        else:
+            return excel.make_response_from_records(check_data, file_type=suffix_name, file_name=file_name_add_date)
 
 
 class UpdateCheck(APIView):

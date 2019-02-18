@@ -12,6 +12,7 @@ from django.db.models import Count, F, Q
 import os, time, re
 from collections import Counter
 import django_excel as excel
+from djqscsv import render_to_csv_response
 from DMS.settings.dev import DATA_SAMBA_IMAGE_LOCATE, DATA_SAMBA_PREX, TRASH_FILE_PATH
 
 from Image.models import Image
@@ -170,13 +171,14 @@ class DownloadFile(APIView):
             'c1_病理号', 'c2_文件名', 'c3_分辨率', 'c4_存储路径', 'c5_片源',
             'c6_切片制式', 'c7_是否学习', 'c8_医生诊断标签', 'c9_朱博士诊断标签')
 
-        # 命名返回文件名字
-        file_name_add_date = '大图信息_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
+        # 命名返回文件名字(django-queryset-csv插件使用中文名字返回时会去掉, 使用英文则不会)
+        file_name_add_date = 'image_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
 
         # 返回对应格式的文件
-        # 返回csv格式使用make_response_from_records会出现中文乱码, 而使用make_response_from_query_sets则没问题
+        # 返回csv格式使用make_response_from_records会出现中文乱码,
+        # pyexcel主要用于上传下载excel类型的数据,因此要改用其它框架django-queryset-csv
         if suffix_name == 'csv':
-            return excel.make_response_from_query_sets(img_data, file_type=suffix_name, file_name=file_name_add_date)
+            return render_to_csv_response(img_data, filename=file_name_add_date)
         else:
             return excel.make_response_from_records(img_data, file_type=suffix_name, file_name=file_name_add_date)
 

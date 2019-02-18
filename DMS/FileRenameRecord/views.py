@@ -12,6 +12,7 @@ import os
 import time
 import pandas as pd
 import django_excel as excel
+from djqscsv import render_to_csv_response
 from sqlalchemy import create_engine
 from DMS.settings.dev import UPLOAD_DB_ENGINE
 from DMS.utils.uploads import save_upload_file
@@ -124,13 +125,14 @@ class DownloadFile(APIView):
             'c1_病理号', 'c2_当前文件名', 'c3_历史曾用名1', 'c4_历史曾用名2',
             'c5_历史曾用名3', 'c6_历史曾用名4', 'c7_历史曾用名5')
 
-        # 命名返回文件名字
-        file_name_add_date = '文件更名记录_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
+        # 命名返回文件名字(django-queryset-csv插件使用中文名字返回时会去掉, 使用英文则不会)
+        file_name_add_date = 'rename_record_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
 
         # 返回对应格式的文件
-        # 返回csv格式使用make_response_from_records会出现中文乱码, 而使用make_response_from_query_sets则没问题
+        # 返回csv格式使用make_response_from_records会出现中文乱码,
+        # pyexcel主要用于上传下载excel类型的数据,因此要改用其它框架django-queryset-csv
         if suffix_name == 'csv':
-            return excel.make_response_from_query_sets(rename_data, file_type=suffix_name, file_name=file_name_add_date)
+            return render_to_csv_response(rename_data, filename=file_name_add_date)
         else:
             return excel.make_response_from_records(rename_data, file_type=suffix_name, file_name=file_name_add_date)
 

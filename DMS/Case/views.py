@@ -15,6 +15,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 from DMS.settings.dev import UPLOAD_DB_ENGINE
 import django_excel as excel
+from djqscsv import render_to_csv_response
 from DMS.utils.uploads import save_upload_file
 
 from Case.models import Case
@@ -126,13 +127,14 @@ class DownloadFile(APIView):
             'c1_病理号', 'c2_医生诊断', 'c3_片源', 'c4_切片制式', 'c5_采样_检查时间',
             'c6_诊断时间', 'c7_末次经期时间', 'c8_临床所见')
 
-        # 命名返回文件名字
-        file_name_add_date = '病例信息_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
+        # 命名返回文件名字(django-queryset-csv插件使用中文名字返回时会去掉, 使用英文则不会)
+        file_name_add_date = 'duplicate_pathology_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
 
         # 返回对应格式的文件
-        # 返回csv格式使用make_response_from_records会出现中文乱码, 而使用make_response_from_query_sets则没问题
+        # 返回csv格式使用make_response_from_records会出现中文乱码,
+        # pyexcel主要用于上传下载excel类型的数据,因此要改用其它框架django-queryset-csv
         if suffix_name == 'csv':
-            return excel.make_response_from_query_sets(case_data, file_type=suffix_name, file_name=file_name_add_date)
+            return render_to_csv_response(case_data, filename=file_name_add_date)
         else:
             return excel.make_response_from_records(case_data, file_type=suffix_name, file_name=file_name_add_date)
 
@@ -168,13 +170,14 @@ class DownloadDuplicateName(APIView):
             'c1_病理号', 'c2_医生诊断', 'c3_片源', 'c4_切片制式', 'c5_采样_检查时间',
             'c6_诊断时间', 'c7_末次经期时间', 'c8_临床所见')
 
-        # 命名返回文件名字
-        file_name_add_date = '重复病理号记录_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
+        # 命名返回文件名字(django-queryset-csv插件使用中文名字返回时会去掉, 使用英文则不会)
+        file_name_add_date = 'duplicate_pathology_' + time.strftime('%Y_%m_%d_%H_%M_%S') + '.{}'.format(suffix_name)
 
         # 返回对应格式的文件
-        # 返回csv格式使用make_response_from_records会出现中文乱码, 而使用make_response_from_query_sets则没问题
+        # 返回csv格式使用make_response_from_records会出现中文乱码,
+        # pyexcel主要用于上传下载excel类型的数据,因此要改用其它框架django-queryset-csv
         if suffix_name == 'csv':
-            return excel.make_response_from_query_sets(duplicate_case_data, file_type=suffix_name, file_name=file_name_add_date)
+            return render_to_csv_response(duplicate_case_data, filename=file_name_add_date)
         else:
             return excel.make_response_from_records(duplicate_case_data, file_type=suffix_name, file_name=file_name_add_date)
 
