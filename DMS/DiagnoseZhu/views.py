@@ -96,17 +96,21 @@ class UploadFile(APIView):
             transaction.savepoint_commit(save_id)
 
         # ------- 更新大图信息中的朱博士诊断 -------- #
+        # 定义列表, 用于给DiagnoseZhuTmp表批量创建
+        diagnose_zhu_tmp_list = []
+
         # 遍历df中的每一条记录
         for index, row in data.iterrows():
             # 如何筛选出来有多条大图记录, 则只更新第一条大图记录
             # 注意这里要使用文件名, 而不能使用病理号, 因此有病理号为TC17001535, 而文件名可能为:TC17001535,TC17001535_1等
             image = Image.objects.filter(is_delete=False, file_name=row['pathology'])
             # ------- 更新大图信息中的朱博士诊断 -------- #
-            # 如何筛选出来有多条大图记录, 则只更新第一条大图记录
+            # 如何筛选出来有多条大图记录, 则所有都更新在一样的
             if image:
-                image1 = image[0]
-                image1.diagnosis_label_zhu = row['his_diagnosis_label']
-                image1.save()
+                image.update(diagnosis_label_zhu=row['his_diagnosis_label'])
+                # image1 = image[0]
+                # image1.diagnosis_label_zhu = row['his_diagnosis_label']
+                # image1.save()
 
             # ------- 查询DiagnoseZhu中的数据，经处理后，保存在DiagnoseZhuTmp表中 ------- #
             # 获取没有逻辑删除的数据, 并按病理号, 创建时间降序排序
@@ -127,8 +131,11 @@ class UploadFile(APIView):
             # 先删除DiagnoseZhuTmp已存在的记录然后再创建
             DiagnoseZhuTmp.objects.filter(is_delete=False, pathology=row['pathology']).delete()
             for k, v in res_dict.items():
-                diagnose_tmp = DiagnoseZhuTmp(pathology=k, his_diagnosis_label=v)
-                diagnose_tmp.save()
+                # 将要创建的对象批量添加到列表中
+                diagnose_zhu_tmp_list.append(DiagnoseZhuTmp(pathology=k, his_diagnosis_label=v))
+
+        # 批量创建
+        DiagnoseZhuTmp.objects.bulk_create(diagnose_zhu_tmp_list)
 
         return Response(status=status.HTTP_201_CREATED, data={"msg": '上传成功！'})
 
