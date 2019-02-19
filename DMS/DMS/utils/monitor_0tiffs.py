@@ -319,7 +319,7 @@ class FSmonitor(object):
 
     def __init__(self):
         # 所有大图的后缀类型
-        self.suffix_type = {'.kfb', '.tiff', '.TMAP', '.tmap'}
+        self.suffix_type = {'.kfb', '.tiff', '.TMAP', '.tmap', '.mds'}
         # 监控的文件夹
         self.dir_type = {'20X', '40X'}
         # 监控路径
