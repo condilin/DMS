@@ -7,6 +7,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import FilterSet, CharFilter
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django.db.models import Count, F
+from django.forms.models import model_to_dict
 from django.db import transaction
 
 import os
@@ -98,6 +99,84 @@ class UploadFile(APIView):
             transaction.savepoint_commit(save_id)
 
             return Response(status=status.HTTP_201_CREATED, data={"msg": '上传成功！'})
+
+
+class CaseRecordCombine(APIView):
+    """
+    上传医生的诊断标签, 匹配已存在的病例信息,
+    匹配到则修改医生诊断标签, 没有匹配到则新增记录
+    """
+
+    def post(self, request):
+
+        start_time = time.time()
+
+        # 获取上传的文件, 'file'值是前端页面input框的name属性的值
+        _file = request.FILES.get('file', None)
+        # 如果获取不到内容, 则说明上传失败
+        if not _file:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"msg": '文件上传失败！'})
+
+        # ---------- 保存上传文件 ---------- #
+
+        # 获取文件的后缀名, 判断上传文件是否符合格式要求
+        suffix_name = os.path.splitext(_file.name)[1]
+        if suffix_name in ['.csv', '.xls', '.xlsx']:
+            upload_file_rename = save_upload_file(_file)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"msg": '请上传csv或excel格式的文件！'})
+
+        # ---------- 读取上传文件数据 ---------- #
+        # excel格式
+        if suffix_name in ['.xls', '.xlsx']:
+            data = pd.read_excel(upload_file_rename)
+        # csv格式
+        else:
+            data = pd.read_csv(upload_file_rename)
+
+        # ---------- 删除上传文件数据 ---------- #
+        os.remove(upload_file_rename)
+
+        # ---------- 自定义列名以及增加列字段值 ---------- #
+        # 重新定义表中字段的列名
+        column_name = ['file_name', 'diagnosis_label_doctor']
+        data.columns = column_name
+
+        # ---------- 匹配/修改病理信息 ---------- #
+
+        # ------ 提取出病理信息中含有这些病理号的记录, 存在的则修改医生的诊断标签, 否则创建记录 ------- #
+        # 提取上传病理号列表
+        pathology_set = set(data['file_name'])
+        # 存在的则修改医生的诊断标签, 否则新增一条新的记录
+        case_list = Case.objects.filter(pathology__in=pathology_set, is_delete=False)
+
+        # 初始化批量创建列表
+        case_no_match_list = []
+
+        # 循环上传的文件, 对匹配到的进行更新
+        for index, row in data.iterrows():
+            # 再次筛选, 精确匹配, 匹配到则修改, 否则新增
+            case_match = case_list.filter(pathology=row['file_name'])
+            if case_match:
+                # 如果匹配到多条, 则更新多条记录为一样的
+                case_match.update(diagnosis_label_doctor=row['diagnosis_label_doctor'])
+            else:
+                case_no_match_list.append(
+                    Case(pathology=row['file_name'], diagnosis_label_doctor=row['diagnosis_label_doctor'])
+                )
+
+            # ---------- 匹配/修改大图信息 ---------- #
+            image = Image.objects.filter(file_name=row['file_name'], is_delete=False)
+            if image:
+                image.update(diagnosis_label_doctor=row['diagnosis_label_doctor'])
+
+        # 循环结束后,批量创建匹配不到的记录
+        if case_no_match_list:
+            Case.objects.bulk_create(case_no_match_list)
+
+        end_time = time.time()
+
+        return Response(status=status.HTTP_201_CREATED, data={'msg': '上传成功！', 'cost_time': end_time-start_time})
 
 
 class DownloadFile(APIView):
