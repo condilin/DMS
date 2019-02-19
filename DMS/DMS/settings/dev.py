@@ -191,7 +191,7 @@ REST_FRAMEWORK = {
     ),
     # 设置默认的分页控制
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE': 10,  # 默认每页显示多少条
+    # 'PAGE_SIZE': 10,  # 默认每页显示多少条
 }
 
 
