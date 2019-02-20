@@ -26,7 +26,8 @@ class CDiagnoseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DiagnoseZhu
-        fields = ('id', 'pathology', 'his_diagnosis_label', 'create_time')
+        # 新增时, 不检验id, 因为不需要用到
+        fields = ('pathology', 'his_diagnosis_label', 'create_time')
 
     def create(self, validated_data):
 
