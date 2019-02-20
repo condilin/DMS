@@ -37,9 +37,8 @@ class CDiagnoseSerializer(serializers.ModelSerializer):
         # ------- 更新大图信息中的朱博士诊断 -------- #
         image = Image.objects.filter(is_delete=False, pathology=diagnose.pathology)
         if image:
-            # 如何筛选出来有多条大图记录, 则只更新第一条大图记录
-            image[0].diagnosis_label_zhu = diagnose.his_diagnosis_label
-            image.save()
+            # 如何筛选出来有多条大图记录, 则全部更新为一样的
+            image.update(diagnosis_label_zhu=diagnose.his_diagnosis_label)
 
         # ------- 查询DiagnoseZhu中的数据，经处理后，保存在DiagnoseZhuTmp表中 ------- #
         # 获取没有逻辑删除的数据, 并按病理号, 创建时间降序排序
@@ -60,8 +59,7 @@ class CDiagnoseSerializer(serializers.ModelSerializer):
         # 先删除DiagnoseZhuTmp已存在的记录然后再创建
         DiagnoseZhuTmp.objects.filter(is_delete=False, pathology=diagnose.pathology).delete()
         for k, v in res_dict.items():
-            diagnose_tmp = DiagnoseZhuTmp(pathology=k, his_diagnosis_label=v)
-            diagnose_tmp.save()
+            DiagnoseZhuTmp.objects.create(pathology=k, his_diagnosis_label=v)
 
         # 返回创建成功的记录
         return diagnose
