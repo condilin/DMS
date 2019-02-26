@@ -78,7 +78,7 @@ async def tiles_dzi(request, image_id):
 
 
 @app.route('/tiles/label_image/<image_id>_label.<format:[A-z]+>')
-async def tiles_png(request, image_id, format):
+async def label_image(request, image_id, format):
     """
     get tile image
     :param request:
@@ -91,12 +91,9 @@ async def tiles_png(request, image_id, format):
 
     bio = BytesIO()
     label_image = slide.label_image
-    # 如果标签存在则保存
-    if label_image:
-        label_image.save(bio, 'png')
-        image_bytes = bio.getvalue()
-    else:
-        image_bytes = b''
+    # 如果标签存在则保存, 否则报500错误给前端进行处理
+    label_image.save(bio, 'png')
+    image_bytes = bio.getvalue()
 
     headers = {}
     headers.setdefault(
