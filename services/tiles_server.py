@@ -2,6 +2,7 @@
 
 import os, sys
 import requests
+import logging
 from io import BytesIO
 from sanic import Sanic, response
 from sanic_cors import CORS
@@ -20,20 +21,38 @@ HOST = '192.168.2.179'
 TIF_PATH_PREX = '/run/user/1000/gvfs/smb-share:server=192.168.2.221,share='
 
 
+# 配置日志/初始化变量
+class ConfigLog(object):
+    def __init__(self):
+        # 日志输出的位置
+        self.log_name = '/home/kyfq/MyPython/PycharmProjects/dms/DMS/DMS/logs/tiles_server.log'
+        # 输出格式
+        self.log_format = '%(levelname)s [%(asctime)s] %(message)s'
+
+        # logging配置
+        logging.basicConfig(
+            level=logging.WARNING,
+            format=self.log_format,
+            filename=self.log_name,
+        )
+
+
 def get_path(image_id, request):
-    if image_id in tif_path_cache:
-        tif_path = tif_path_cache[image_id]
-    else:
-        tiff_url = 'http://%s/api/v1/images/?id=%s' % (HOST, image_id)
-        response = requests.get(tiff_url)
-        if response.status_code != 200:
-            raise Exception('can not get resource', response.status_code, response.content)
+    try:
+        if image_id in tif_path_cache:
+            tif_path = tif_path_cache[image_id]
+        else:
+            tiff_url = 'http://%s/api/v1/images/?id=%s' % (HOST, image_id)
+            response = requests.get(tiff_url)
+            if response.status_code != 200:
+                raise Exception('can not get resource', response.status_code, response.content)
 
-        image_info = response.json()['results'][0]
-        tif_path = TIF_PATH_PREX + os.path.join(image_info['storage_path'], image_info['file_name']) + image_info['suffix']
-        tif_path_cache[image_info['file_name']] = tif_path
-
-    return tif_path
+            image_info = response.json()['results'][0]
+            tif_path = TIF_PATH_PREX + os.path.join(image_info['storage_path'], image_info['file_name']) + image_info['suffix']
+            tif_path_cache[image_info['file_name']] = tif_path
+        return tif_path
+    except Exception as e:
+        logging.error('获取路径出错：%s' % e)
 
 
 def get_slide(image_id, img_path):
@@ -45,16 +64,19 @@ def get_slide(image_id, img_path):
     img_name = os.path.basename(img_path)
     img = image_id + '_' + img_name
 
-    if img in slide_cache:
-        slide = slide_cache[img]
-    else:
-        slide = Aslide(img_path)
-        slide_cache[img] = slide
+    try:
+        if img in slide_cache:
+            slide = slide_cache[img]
+        else:
+            slide = Aslide(img_path)
+            slide_cache[img] = slide
 
-    return slide
+        return slide
+    except Exception as e:
+        logging.error('读取图片失败：%s' % e)
 
 
-@app.route('/tiles/<image_id>/')
+@app.route('/tiles/<image_id>')
 async def tiles_dzi(request, image_id):
     """
     get tiff information
@@ -74,6 +96,7 @@ async def tiles_dzi(request, image_id):
         zoomer = ADeepZoomGenerator(slide).get_dzi('jpeg')
         return response.html(zoomer)
     except Exception as e:
+        logging.error(e)
         return response.html(str(e))
 
 
@@ -172,10 +195,15 @@ async def cell_image_request(request, image_id, x, y, w, h):
 
 if __name__ == '__main__':
 
+    # 开始日志
+    ConfigLog()
+
+    # 指定端口号
     port = sys.argv[1]
     try:
         port = int(port)
     except:
         raise Exception("PORT %s IS NOT ACCEPTED!" % port)
 
-    app.run(host="0.0.0.0", port=port, access_log=True, error_log=True)
+    # access_log=False 不记录成功的日志, error_log=True, 记录失败的日志
+    app.run(host="0.0.0.0", port=port, access_log=False, error_log=True)
