@@ -98,13 +98,30 @@ class UploadFile(APIView):
             # 提交事务
             transaction.savepoint_commit(save_id)
 
-            return Response(status=status.HTTP_201_CREATED, data={"msg": '上传成功！'})
+        # ---------- 匹配/修改大图信息 ---------- #
+        # 提取上传病理号列表
+        pathology_set = set(data['pathology'])
+        # 查询大图中含有该病理号的大图列表
+        image_list = Image.objects.filter(pathology__in=pathology_set, is_delete=False)
+        # 循环上传的文件, 对匹配到的进行更新
+        for index, row in data.iterrows():
+            # 再次筛选, 精确匹配, 匹配到则修改
+            image_match = image_list.filter(pathology=row['pathology'])
+            if image_match:
+                # 如果匹配到多条, 则更新多条记录为一样的
+                image_match.update(
+                    diagnosis_label_doctor=row['diagnosis_label_doctor'],
+                    making_way=row['making_way']
+                )
+
+        return Response(status=status.HTTP_201_CREATED, data={"msg": '上传成功！'})
 
 
 class CaseRecordCombine(APIView):
     """
     上传医生的诊断标签, 匹配已存在的病例信息,
     匹配到则修改医生诊断标签, 没有匹配到则新增记录
+    同时匹配到同步更新大图医生诊断
     """
 
     def post(self, request):

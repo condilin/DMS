@@ -9,7 +9,7 @@ from django.conf.urls import url
 from . import views
 
 urlpatterns = [
-    url(r'^cases/uploads/$', views.UploadFile.as_view()),  # 上传病例数据文件
+    url(r'^cases/uploads/$', views.UploadFile.as_view()),  # 追加上传病例数据文件,同时更新大图记录
     url(r'^cases/uploads/only_diagnose/$', views.CaseRecordCombine.as_view()),  # 上传病例信息只有医生诊断标签的
 
     url(r'^cases/downloads/$', views.DownloadFile.as_view()),  # 下传病例数据文件
