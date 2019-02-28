@@ -19,6 +19,7 @@ from Image.models import Image
 from Image.serializers import ImageSerializer
 from Case.models import Case
 from DiagnoseZhu.models import DiagnoseZhu
+from Train.models import TrainedImage
 
 import logging
 logger = logging.getLogger('django')
@@ -267,9 +268,8 @@ class UpdateDataBase(APIView):
                 # 删除表中没有逻辑删除的记录,那些已逻辑删除的要保存记录下来
                 Image.objects.filter(is_delete=False).delete()
 
-                # 方案1：先查询出训练数据的详细信息,然后再给下面的is_delete去判断在不在里面,提高效率,不用每次去查询表？？？？？！！！！
-                # train_data_file_name = Table.object.filter(file_name=file_name)
-                # 方案2：使用F对象
+                # 方案1：先查询出已训练数据,然后再给下面的is_delete去判断在不在里面,提高效率,不用每次去查询表
+                train_data_file_name = list(TrainedImage.objects.values_list('file_name', flat=True))
 
                 # 定义列表,存储多条数据库数据对象
                 queryset_list = []
@@ -291,13 +291,17 @@ class UpdateDataBase(APIView):
                             file_create_time_ts = os.path.getctime(os.path.join(root, name))
                             scan_time = self.timestamp_to_time(file_create_time_ts)
                             # --------------------- 是否学习 --------------------- #
-                            # is_learn = True if file_name in train_data_file_name else False
+                            is_learn = True if file_name in train_data_file_name else False
                             # --------------------- 查询病例信息(片源,制式,医生诊断) --------------------- #
-                            case = Case.objects.filter(pathology=pathology).values(
+                            case = Case.objects.filter(pathology=pathology, is_delete=False).values(
                                 'waveplate_source', 'diagnosis_label_doctor', 'making_way')
                             if case:
                                 if case.count() >= 2:
-                                    diagnosis_label_doctor = '?: %s条病例信息' % case.count()
+                                    # 拼接病理号相同的诊断结果
+                                    diagnosis_label_doctor_list = [i['diagnosis_label_doctor'] for i in case if
+                                                                   i['diagnosis_label_doctor'] is not None]
+                                    diagnosis_label_doctor = '+'.join(
+                                        diagnosis_label_doctor_list) if diagnosis_label_doctor_list else None
                                     making_way = case.filter(making_way__isnull=False).first().get('making_way')
                                 else:
                                     diagnosis_label_doctor = case.first().get('diagnosis_label_doctor')
@@ -317,7 +321,7 @@ class UpdateDataBase(APIView):
                             queryset_list.append(Image(pathology=pathology, file_name=file_name, suffix=suffix_name,
                                                        storage_path=storage_path, resolution=resolution,
                                                        diagnosis_label_doctor=diagnosis_label_doctor,
-                                                       diagnosis_label_zhu=diagnosis_label_zhu,
+                                                       diagnosis_label_zhu=diagnosis_label_zhu, is_learn=is_learn,
                                                        waveplate_source=waveplate_source, making_way=making_way,
                                                        scan_time=scan_time))
 
