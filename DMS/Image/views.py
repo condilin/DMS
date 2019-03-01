@@ -312,8 +312,8 @@ class UpdateDataBase(APIView):
                                 making_way = None
                             # --------------------- 朱博士最新诊断标签 --------------------- #
                             try:
-                                diagnosis_label_zhu = DiagnoseZhu.objects.filter(
-                                    pathology=pathology).order_by('-create_time')[0].his_diagnosis_label
+                                diag = DiagnoseZhu.objects.filter(pathology=pathology).order_by('-create_time')
+                                diagnosis_label_zhu = [i.his_diagnosis_label.split(',')[0] for i in diag][0]
                             except Exception as e:
                                 diagnosis_label_zhu = None
 
