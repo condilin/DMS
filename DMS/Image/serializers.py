@@ -15,8 +15,8 @@ class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
         fields = ('id', 'pathology', 'file_name', 'suffix', 'resolution', 'storage_path',
-                  'waveplate_source', 'is_learn', 'diagnosis_label_doctor',
-                  'diagnosis_label_zhu', 'making_way', 'scan_time', 'dup_count')
+                  'waveplate_source', 'is_learn', 'diagnosis_label_doctor', 'diagnosis_label_zhu',
+                  'making_way', 'scan_time', 'quality', 'dup_count')
 
     # def create(self, validated_data):
     #     """重写create, 当数据库中存在相同文件名,存储路径时,不保存记录"""

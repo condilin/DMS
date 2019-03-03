@@ -465,3 +465,29 @@ class SUDImageView(APIView):
 
         return Response(status=status.HTTP_204_NO_CONTENT, data={'msg': '删除成功！'})
 
+
+class UUpdateQuality(APIView):
+
+    """
+    patch: 更新大图质量字段
+    """
+
+    def patch(self, request):
+
+        # 获取大图病理号, 及质量字段
+        file_name = request.data.get('pathology', None)
+        img_quality = request.data.get('image_quality', None)
+        if not img_quality or not file_name:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={'msg': '参数错误！'})
+
+        # 通过文件名进行查询(会忽略大小写, 同时去除两边的空格)
+        img = Image.objects.filter(file_name=file_name.strip(), is_delete=False)
+        if not img:
+            return Response(status=status.HTTP_404_NOT_FOUND, data={'msg': '该病理号不存在！'})
+
+        # 修改图像质量
+        img.update(quality=img_quality)
+        # 序列化修改成功的数据返回
+        ser = ImageSerializer(img, many=True)
+
+        return Response(status=status.HTTP_200_OK, data={'results': ser.data})
