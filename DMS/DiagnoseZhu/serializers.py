@@ -47,19 +47,17 @@ class CDiagnoseSerializer(serializers.ModelSerializer):
             'pathology', '-create_time')
 
         # 将queryset类型转换成dict
-        res_list = []
-        for i in raw_queryset:
-            res_list.append(model_to_dict(i))
+        res_list = [model_to_dict(i) for i in raw_queryset]
+
         # 转换成df
         res_df = pd.DataFrame(res_list)
-        # 分组合并
-        res_df_gb = res_df.groupby(by='pathology').apply(lambda x: ','.join(x['his_diagnosis_label']))
-        res_dict = res_df_gb.to_dict()
+        # 获取病理号及历史诊断标签字符拼接
+        res_df_pathology = res_df['pathology'][0]
+        res_df_his_diagnosis_label = ','.join(res_df['his_diagnosis_label'])
 
         # 先删除DiagnoseZhuTmp已存在的记录然后再创建
         DiagnoseZhuTmp.objects.filter(is_delete=False, pathology=diagnose.pathology).delete()
-        for k, v in res_dict.items():
-            DiagnoseZhuTmp.objects.create(pathology=k, his_diagnosis_label=v)
+        DiagnoseZhuTmp.objects.create(pathology=res_df_pathology, his_diagnosis_label=res_df_his_diagnosis_label)
 
         # 返回创建成功的记录
         return diagnose
