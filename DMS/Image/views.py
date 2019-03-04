@@ -487,7 +487,7 @@ class UUpdateQuality(APIView):
 
         # 修改图像质量
         img.update(quality=img_quality)
-        # 序列化修改成功的数据返回
+        # 序列化修改成功的数据返回, 使用filter查询出来可能有多少, 因此要加many=True, 而使用get只能有一条, 可不加
         ser = ImageSerializer(img, many=True)
 
         return Response(status=status.HTTP_200_OK, data={'results': ser.data})
