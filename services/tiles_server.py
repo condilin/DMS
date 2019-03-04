@@ -114,9 +114,12 @@ async def label_image(request, image_id, format):
 
     bio = BytesIO()
     label_image = slide.label_image
-    # 如果标签存在则保存, 否则报500错误给前端进行处理
-    label_image.save(bio, 'png')
-    image_bytes = bio.getvalue()
+    # 如果标签存在则保存,否则返回一个空字节
+    if label_image:
+        label_image.save(bio, 'png')
+        image_bytes = bio.getvalue()
+    else:
+        image_bytes = b''
 
     headers = {}
     headers.setdefault(
