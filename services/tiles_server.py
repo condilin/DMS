@@ -62,7 +62,7 @@ def get_slide(image_id, img_path):
     :return:
     """
     img_name = os.path.basename(img_path)
-    img = image_id + '_' + img_name
+    img = str(image_id) + '_' + img_name
 
     try:
         if img in slide_cache:
@@ -84,12 +84,6 @@ async def tiles_dzi(request, image_id):
     :param image_id: id of tiff image
     :return:
     """
-
-    # img_path = request.args.get('img_path', None)
-    # if not img_path:
-    #     return text('请求参数错误！', status=400)
-    #
-    # slide = get_slide(img_path)
 
     slide = get_slide(image_id, get_path(image_id, request))
     try:
