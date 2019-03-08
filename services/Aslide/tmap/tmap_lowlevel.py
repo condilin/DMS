@@ -14,7 +14,7 @@ _lib = cdll.LoadLibrary('libiViewerSDK.so')
 
 class _TmapSlide(object):
     def __init__(self, ptr):
-        self._as_parameter = ptr
+        self._as_parameter_ = ptr
         self._valid = True
 
         self._close = close_tmap_file
@@ -42,6 +42,7 @@ def _check_open(result, _func, _args):
     if result is None:
         raise lowlevel.OpenSlideUnsupportedFormatError(
             "Unsupported or missing image file")
+
     slide = _TmapSlide(c_void_p(result))
 
     return slide
@@ -74,19 +75,23 @@ def _func(name, restype, argtypes, errcheck=_check_error):
     func = getattr(_lib, name)
     func.argtypes = argtypes
     func.restype = restype
-    # if errcheck is not None:
-    #     func.errcheck = errcheck
+
+    if errcheck:
+        func.errcheck = errcheck
+
     return func
 
 
 def _handle_func(puc_list, W, H):
     length = W * H * 3
     try:
-        data = ctypes.string_at(puc_list, length)
-        data = np.fromstring(data, np.uint8).reshape((W, H, 3))
+        content = ctypes.string_at(puc_list, length)
+        data = np.fromstring(content, np.uint8).reshape((W, H, 3))
         data= data[:, :, ::-1]
 
-        return Image.fromarray(np.asarray(data, dtype=np.uint8))
+        image = Image.fromarray(np.asarray(data, dtype=np.uint8))
+
+        return image
     except Exception as e:
         raise e
 
@@ -96,32 +101,34 @@ _open_tmap_file = _func('OpenTmapFile', c_void_p, None, _check_open)
 
 
 def open_tmap_file(name):
-    osr = _open_tmap_file(name, len(name))
+    path = c_char_p(bytes(name, 'utf8'))
+    osr = _open_tmap_file(path, len(name))
+
     return osr
 
 
 # 关闭图像 函数
-close_tmap_file = _func('CloseTmapFile', None, [c_void_p], _check_close)
+close_tmap_file = _func('CloseTmapFile', c_int, [_TmapSlide], lowlevel._check_close)
 
 # 获取图层数 函数
-get_focus_number = _func('GetFocusNumber', c_int, [c_void_p])
+get_focus_number = _func('GetFocusNumber', c_int, [_TmapSlide], None)
 
-set_focus_layer = _func('SetFocusLayer', c_int, [c_void_p, c_int])
+set_focus_layer = _func('SetFocusLayer', c_int, [_TmapSlide, c_int], None)
 
 # 获取当前的对焦面数值
-get_focus_layer = _func('GetFocusLayer', c_int, [c_void_p])
+get_focus_layer = _func('GetFocusLayer', c_int, [_TmapSlide], None)
 
 # 获取Tmap文件扫描时的分级数
-get_layer_num = _func('GetLayerNum', c_int, [c_void_p])
+get_layer_num = _func('GetLayerNum', c_int, [_TmapSlide], None)
 
 # 获取Tmap文件的总共图像块数目
-get_tile_mumber = _func('GetTileNumber', c_int, [c_void_p])
+get_tile_mumber = _func('GetTileNumber', c_int, [_TmapSlide], None)
 
 # 获取格式文件的版本号
-get_tmap_version = _func('GetTmapVersion', c_int, [c_void_p])
+get_tmap_version = _func('GetTmapVersion', c_int, [_TmapSlide], None)
 
 # 获取Tmap文件扫描时的最大倍率
-get_scan_scale = _func('GetScanScale', c_int, [c_void_p])
+get_scan_scale = _func('GetScanScale', c_int, [_TmapSlide], None)
 
 
 class ImgSize(Structure):
@@ -133,7 +140,7 @@ class ImgSize(Structure):
 
 
 # 获取Tmap格式文件的整体图片信息
-_get_image_info_ex = _func('GetImageInfoEx', ImgSize, [c_void_p, c_int])
+_get_image_info_ex = _func('GetImageInfoEx', ImgSize, [_TmapSlide, c_int])
 
 
 def get_image_info_ex(slide, etype):
@@ -164,10 +171,10 @@ def get_level_downsamples(slide):
     return tuple(reversed([np.power(2, i) for i in range(length)]))
 
 # 获取Tmap格式文件的整体图片信息
-get_pixel_size = _func('GetPixelSize', c_int, [c_void_p])
+get_pixel_size = _func('GetPixelSize', c_int, [_TmapSlide])
 
 # 获取Tmap格式文件的切片数字图像信息
-_get_image_data = _func('GetImageData', c_int, [c_void_p, c_int, c_char_p, c_int])
+_get_image_data = _func('GetImageData', c_int, [_TmapSlide, c_int, c_char_p, c_int])
 
 
 def get_image_data(slide, etype):
@@ -182,7 +189,7 @@ def get_image_data(slide, etype):
 
 
 # 获取Tmap格式文件的数据
-_get_image_size_ex = _func('GetImageSizeEx', ImgSize, [c_void_p, c_int, c_int, c_int, c_int, c_float])
+_get_image_size_ex = _func('GetImageSizeEx', ImgSize, [_TmapSlide, c_int, c_int, c_int, c_int, c_float])
 
 
 def get_image_size_ex(slide, nLeft, nTop, nRight, nBottom, fScale):
@@ -192,14 +199,30 @@ def get_image_size_ex(slide, nLeft, nTop, nRight, nBottom, fScale):
 
 # 获取Tmap格式文件的切片数字图像
 _get_crop_image_data_ex = _func('GetCropImageDataEx', POINTER(c_ubyte),
-                                [c_void_p, c_int, c_int, c_int, c_int, c_int, c_float])
+                                [_TmapSlide, c_int, c_int, c_int, c_int, c_int, c_float])
 
 
-def get_crop_image_data_ex(slide, nIndex, nLeft, nTop, nRight, nBottom, fScale=0.0):
-    fScale = get_scan_scale(slide)
-    img_size = _get_image_size_ex(slide, nLeft, nTop, nRight, nBottom, fScale)
+def restore_location_in_level_0(nLeft, nTop, nRight, nBottom, level, max_fscale):
+    if level == 0:
+        pass
+    else: 
+        n = int(max_fscale // level)
+
+        nLeft = n * nLeft
+        nTop = n * nTop
+        nRight = n * nRight
+        nBottom = n * nBottom
+
+    return nLeft, nTop, nRight, nBottom
+
+
+def get_crop_image_data_ex(slide, nIndex, nLeft, nTop, nRight, nBottom, fScale):
+    max_fScale = get_scan_scale(slide)
+
+    nLeft, nTop, nRight, nBottom = restore_location_in_level_0(nLeft, nTop, nRight, nBottom, fScale, max_fScale)
+    img_size = _get_image_size_ex(slide, nLeft, nTop, nRight, nBottom, max_fScale)
     nBufferLength = img_size.imgsize
-    crop_image_data = _get_crop_image_data_ex(slide, c_int(nIndex), nLeft, nTop, nRight, nBottom, fScale, nBufferLength)
+    crop_image_data = _get_crop_image_data_ex(slide, c_int(nIndex), nLeft, nTop, nRight, nBottom, max_fScale, nBufferLength)
 
     return _handle_func(crop_image_data, img_size.height, img_size.width)
 

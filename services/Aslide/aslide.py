@@ -125,16 +125,15 @@ class Aslide(object):
 
 
 if __name__ == '__main__':
-	filepath = '/home/kyfq/test_tiles/Tc11204fff.kfb'
+	filepath = '/home/stimage/Development/DATA/TEST_DATA/test001.kfb'
 	slide = Aslide(filepath)
-	# print("Format : ", slide.detect_format(filepath))
+	print("Format : ", slide.detect_format(filepath))
 	print("level_count : ", slide.level_count)
 	print("level_dimensions : ", slide.level_dimensions)
 	print("level_downsamples : ", slide.level_downsamples)
-	# print("properties : ", slide.properties)
-	print("Associated Images : ", slide.label_image)
-	# im = slide.label_image
-	for key, val in slide.label_image.items():
+	print("properties : ", slide.properties)
+	print("Associated Images : ")
+	for key, val in slide.associated_images.items():
 		print(key, " --> ", val)
 
 	print("best level for downsample 20 : ", slide.get_best_level_for_downsample(20))
