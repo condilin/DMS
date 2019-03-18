@@ -1,7 +1,7 @@
 # !/usr/bin/env python3
 # -*- encoding: utf-8 -*-
 # @author: condi
-# @file: monitor_0tiffs.py
+# @file: monitor_0tiffs_v1.py
 # @time: 19-1-15 下午2:54
 
 import pyinotify
