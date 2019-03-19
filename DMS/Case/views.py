@@ -99,14 +99,19 @@ class UploadFile(APIView):
             transaction.savepoint_commit(save_id)
 
         # ---------- 匹配/修改大图信息 ---------- #
-        # 提取上传病理号列表
-        pathology_set = set(data['pathology'])
+        # 提取上传病理号列表(查询时对病理号进行左右去空格等字符)
+        pathology_set = set(data['pathology'].str.strip())
         # 查询大图中含有该病理号的大图列表
         image_list = Image.objects.filter(pathology__in=pathology_set, is_delete=False)
+
+        # 如何大图中没有该病理号, 则无需更新大图的医生诊断
+        if not image_list:
+            return Response(status=status.HTTP_201_CREATED, data={"msg": '上传成功！'})
+
         # 循环上传的文件, 对匹配到的进行更新
         for index, row in data.iterrows():
-            # 再次筛选, 精确匹配, 匹配到则修改
-            image_match = image_list.filter(pathology=row['pathology'])
+            # 再次筛选, 精确匹配, 匹配到则修改(对病理号进行左右去空格等字符)
+            image_match = image_list.filter(pathology=row['pathology'].strip())
             if image_match:
                 # 如果匹配到多条, 则更新多条记录为一样的
                 image_match.update(
@@ -434,9 +439,7 @@ class SUDCaseView(APIView):
         image = Image.objects.filter(pathology=case_pathology, is_delete=False)
         # 如果在大图中匹配到病例信息中的病理号, 则同步修改大图; 如果有多条, 则全部修改成一样
         if image:
-            for i in image:
-                i.diagnosis_label_doctor = diagnosis_label_doctor_str
-                i.save()
+            image.update(diagnosis_label_doctor=diagnosis_label_doctor_str)
 
         return Response(status=status.HTTP_204_NO_CONTENT, data={'msg': '删除成功！'})
 
@@ -450,7 +453,7 @@ class BatchUpdateCaseView(APIView):
         # 获取要删除的id列表
         delete_id_str = request.POST.get('idList', None)
         if not delete_id_str:
-            return Response(status=status.HTTP_400_BAD_REQUEST, data={'msg': '你妹的，没有idlist！'})
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={'msg': '没有idlist！'})
 
         # 根据id列表, 查询数据库对象
         try:
@@ -461,5 +464,19 @@ class BatchUpdateCaseView(APIView):
 
         # 批量更新，.save方法适合于单条记录的保存, 而.update方法适用于批量数据的保存
         case.update(is_delete=True)
+
+        # ----- 医生的诊断标签同步到大图表中 ----- #
+        # 获取病理号
+        case_pathology = case[0].pathology
+        # 根据病理号, 查询所有的没有删除的病理号的医生诊断标签, 并使用,号进行拼接
+        case_res = Case.objects.filter(pathology=case_pathology, is_delete=False)
+        diagnosis_label_doctor_list = [i.diagnosis_label_doctor for i in case_res if i.diagnosis_label_doctor is not None]
+        diagnosis_label_doctor_str = '+'.join(diagnosis_label_doctor_list) if diagnosis_label_doctor_list else None
+
+        # 根据病理号查询大图记录
+        image = Image.objects.filter(pathology=case_pathology, is_delete=False)
+        # 如果在大图中匹配到病例信息中的病理号, 则同步修改大图; 如果有多条, 则全部修改成一样
+        if image:
+            image.update(diagnosis_label_doctor=diagnosis_label_doctor_str)
 
         return Response(status=status.HTTP_204_NO_CONTENT, data={'msg': '批量删除成功！'})
