@@ -324,6 +324,16 @@ class CaseFilter(FilterSet):
         fields = ['pathology', 'diagnosis_label_doctor']
 
 
+class ExactCaseFilter(FilterSet):
+    """搜索类"""
+
+    pathology = CharFilter(lookup_expr='iexact')  # 模糊查询（包含），并且忽略大小写
+
+    class Meta:
+        model = Case
+        fields = ['pathology']
+
+
 class SearchDuplicateFileName(ListAPIView):
     """
     get: 搜索病例中出现重复的病理号
@@ -366,6 +376,27 @@ class SCCaseView(ListCreateAPIView):
     ordering_fields = ('pathology',)
     # 指定可以被搜索字段
     filter_class = CaseFilter
+
+
+class SelectExactCaseView(ListAPIView):
+    """
+    get: 根据病理号精确查询病例记录列表
+    """
+
+    # 指定查询集, 获取没有逻辑删除的数据
+    queryset = Case.objects.filter(is_delete=False)
+
+    # 指定序列化器
+    serializer_class = CaseSerializer
+
+    # OrderingFilter：指定排序的过滤器,可以按任意字段排序,通过在路由中通过ordering参数控制,如：?ordering=id
+    # DjangoFilterBackend对应filter_fields属性，做相等查询
+    # SearchFilter对应search_fields，对应模糊查询
+    filter_backends = [OrderingFilter, DjangoFilterBackend, SearchFilter]
+    # 默认指定按哪个字段进行排序
+    ordering_fields = ('pathology',)
+    # 指定可以被搜索字段
+    filter_class = ExactCaseFilter
 
 
 class SUDCaseView(APIView):

@@ -21,5 +21,6 @@ urlpatterns = [
     url(r'^cases/batches/updates/$', views.BatchUpdateCaseView.as_view()),  # 批量删除
 
     url(r'^cases/(?P<pk>\d+)/$', views.SUDCaseView.as_view()),  # 查询/更新/删除
+    url(r'^cases/exact/', views.SelectExactCaseView.as_view()),  # 精确查询病理号
     url(r'^cases/$', views.SCCaseView.as_view()),  # 查询/新增
 ]
