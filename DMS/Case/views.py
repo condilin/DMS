@@ -451,7 +451,7 @@ class BatchUpdateCaseView(APIView):
 
     def post(self, request):
         # 获取要删除的id列表
-        delete_id_str = request.POST.get('idList', None)
+        delete_id_str = request.data.get('idList', None)
         if not delete_id_str:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={'msg': '没有idlist！'})
 
@@ -459,6 +459,8 @@ class BatchUpdateCaseView(APIView):
         try:
             _delete_id_list = delete_id_str.split(',')
             case = Case.objects.filter(id__in=_delete_id_list, is_delete=False)
+            # 获取病理号
+            case_pathology = case[0].pathology
         except Case.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND, data={'msg': '列表中含有不存在的数据！'})
 
@@ -466,8 +468,7 @@ class BatchUpdateCaseView(APIView):
         case.update(is_delete=True)
 
         # ----- 医生的诊断标签同步到大图表中 ----- #
-        # 获取病理号
-        case_pathology = case[0].pathology
+
         # 根据病理号, 查询所有的没有删除的病理号的医生诊断标签, 并使用,号进行拼接
         case_res = Case.objects.filter(pathology=case_pathology, is_delete=False)
         diagnosis_label_doctor_list = [i.diagnosis_label_doctor for i in case_res if i.diagnosis_label_doctor is not None]
