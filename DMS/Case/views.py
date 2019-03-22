@@ -13,6 +13,7 @@ from django.db import transaction
 import os
 import time
 import pandas as pd
+import numpy as np
 from sqlalchemy import create_engine
 from DMS.settings.dev import UPLOAD_DB_ENGINE
 import django_excel as excel
@@ -116,7 +117,7 @@ class UploadFile(APIView):
                 # 如果匹配到多条, 则更新多条记录为一样的
                 image_match.update(
                     diagnosis_label_doctor=row['diagnosis_label_doctor'],
-                    making_way=row['making_way']
+                    making_way=None if np.isnan(row['making_way']) else row['making_way']
                 )
 
         return Response(status=status.HTTP_201_CREATED, data={"msg": '上传成功！'})
