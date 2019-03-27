@@ -328,7 +328,7 @@ class CaseFilter(FilterSet):
 class ExactCaseFilter(FilterSet):
     """搜索类"""
 
-    pathology = CharFilter(lookup_expr='iexact')  # 模糊查询（包含），并且忽略大小写
+    pathology = CharFilter(lookup_expr='iexact')  # 精确查询（包含），并且忽略大小写
 
     class Meta:
         model = Case

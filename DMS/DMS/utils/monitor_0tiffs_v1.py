@@ -63,7 +63,7 @@ class EvenHandle(pyinotify.ProcessEvent):
             query_url = 'http://%s/api/v1/cases/exact/?pathology=%s' % (self.host, kwargs['pathology'])
         # 查询朱博士诊断中对应的病理号在数据库中是否存在
         else:
-            query_url = 'http://%s/api/v1/diagnosis/?pathology=%s' % (self.host, kwargs['pathology'])
+            query_url = 'http://%s/api/v1/diagnosis/exact/?pathology=%s' % (self.host, kwargs['pathology'])
         response = requests.get(query_url)
         # 转换成dict
         response_dict = json.loads(response.text)
