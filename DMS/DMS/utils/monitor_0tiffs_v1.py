@@ -60,7 +60,7 @@ class EvenHandle(pyinotify.ProcessEvent):
             )
         # 查询病例中对应的病理号在数据库中是否存在
         elif type == 'case':
-            query_url = 'http://%s/api/v1/cases/?pathology=%s' % (self.host, kwargs['pathology'])
+            query_url = 'http://%s/api/v1/cases/exact/?pathology=%s' % (self.host, kwargs['pathology'])
         # 查询朱博士诊断中对应的病理号在数据库中是否存在
         else:
             query_url = 'http://%s/api/v1/diagnosis/?pathology=%s' % (self.host, kwargs['pathology'])
