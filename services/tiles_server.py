@@ -39,17 +39,17 @@ class ConfigLog(object):
 
 def get_path(image_id, request):
     try:
-        if image_id in tif_path_cache:
-            tif_path = tif_path_cache[image_id]
-        else:
-            tiff_url = 'http://%s/api/v1/images/?id=%s' % (HOST, image_id)
-            response = requests.get(tiff_url)
-            if response.status_code != 200:
-                raise Exception('can not get resource', response.status_code, response.content)
+        # if image_id in tif_path_cache:
+        #     tif_path = tif_path_cache[image_id]
+        # else:
+        tiff_url = 'http://%s/api/v1/images/?id=%s' % (HOST, image_id)
+        response = requests.get(tiff_url)
+        if response.status_code != 200:
+            raise Exception('can not get resource', response.status_code, response.content)
 
-            image_info = response.json()['results'][0]
-            tif_path = TIF_PATH_PREX + os.path.join(image_info['storage_path'], image_info['file_name']) + image_info['suffix']
-            tif_path_cache[image_info['file_name']] = tif_path
+        image_info = response.json()['results'][0]
+        tif_path = TIF_PATH_PREX + os.path.join(image_info['storage_path'], image_info['file_name']) + image_info['suffix']
+        # tif_path_cache[image_info['file_name']] = tif_path
         return tif_path
     except Exception as e:
         logging.error('获取路径出错：%s' % e)
@@ -65,12 +65,11 @@ def get_slide(image_id, img_path):
     img = str(image_id) + '_' + img_name
 
     try:
-        if img in slide_cache:
-            slide = slide_cache[img]
-        else:
-            slide = Aslide(img_path)
-            slide_cache[img] = slide
-
+        # if img in slide_cache:
+        #     slide = slide_cache[img]
+        # else:
+        slide = Aslide(img_path)
+        # slide_cache[img] = slide
         return slide
     except Exception as e:
         logging.error('读取图片失败：%s' % e)
