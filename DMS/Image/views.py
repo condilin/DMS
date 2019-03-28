@@ -374,9 +374,10 @@ class ExactImageFilter(FilterSet):
         fields = ['id', 'file_name', 'storage_path']
 
 
-class SImageView(ListAPIView):
+class SImageView(ListCreateAPIView):
     """
     get: 查询大图列表
+    post: 新增一条大图记录
     """
 
     # 指定查询集, 获取没有逻辑删除的数据

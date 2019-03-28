@@ -9,7 +9,7 @@ from .models import Image
 
 
 class ImageSerializer(serializers.ModelSerializer):
-    """查"""
+    """查增"""
 
     class Meta:
         model = Image
