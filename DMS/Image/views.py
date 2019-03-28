@@ -16,7 +16,7 @@ from djqscsv import render_to_csv_response
 from DMS.settings.dev import DATA_SAMBA_IMAGE_LOCATE, DATA_SAMBA_PREX, TRASH_FILE_PATH
 
 from Image.models import Image
-from Image.serializers import ImageSerializer
+from Image.serializers import ImageSerializer, DupImageSerializer
 from Case.models import Case
 from DiagnoseZhu.models import DiagnoseZhu
 from Train.models import TrainedImage
@@ -136,7 +136,7 @@ class FindDuplicateFileName(APIView):
 
         # 序列化返回
         # 查询多条重复记录, 因此需要指定many=True, 并指定instance
-        serializer = ImageSerializer(instance=page_roles, many=True)
+        serializer = DupImageSerializer(instance=page_roles, many=True)
 
         # 不含上一页和下一页，要手动的在url中传参limit和offset来控制第几页
         # return Response(status=status.HTTP_200_OK, data=serializer.data)
@@ -362,10 +362,42 @@ class ImageFilter(FilterSet):
                   'diagnosis_label_doctor', 'diagnosis_label_zhu', 'is_learn']
 
 
-class SImageView(ListCreateAPIView):
+class ExactImageFilter(FilterSet):
+    """搜索类"""
+
+    id = CharFilter(lookup_expr='iexact')  # 精确查询
+    file_name = CharFilter(lookup_expr='iexact')  # 精确查询，并且忽略大小写
+    storage_path = CharFilter(lookup_expr='iexact')  # 精确查询，并且忽略大小写
+
+    class Meta:
+        model = Image
+        fields = ['id', 'file_name', 'storage_path']
+
+
+class SImageView(ListAPIView):
     """
     get: 查询大图列表
-    post: 新增一条记录
+    """
+
+    # 指定查询集, 获取没有逻辑删除的数据
+    queryset = Image.objects.filter(is_delete=False).order_by('-scan_time')
+
+    # 指定序列化器
+    serializer_class = ImageSerializer
+
+    # OrderingFilter：指定排序的过滤器,可以按任意字段排序,通过在路由中通过ordering参数控制,如：?ordering=id
+    # DjangoFilterBackend对应filter_fields属性，做相等查询
+    # SearchFilter对应search_fields，对应模糊查询
+    filter_backends = [OrderingFilter, DjangoFilterBackend, SearchFilter]
+    # 默认指定按哪个字段进行排序
+    ordering_fields = ('pathology', )
+    # 指定可以被搜索字段
+    filter_class = ExactImageFilter
+
+
+class SelectExactImageView(ListAPIView):
+    """
+    get: 根据病理号精确查询病例记录列表
     """
 
     # 指定查询集, 获取没有逻辑删除的数据

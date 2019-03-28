@@ -9,7 +9,17 @@ from .models import Image
 
 
 class ImageSerializer(serializers.ModelSerializer):
-    """查增"""
+    """查"""
+
+    class Meta:
+        model = Image
+        fields = ('id', 'pathology', 'file_name', 'suffix', 'resolution', 'storage_path',
+                  'waveplate_source', 'is_learn', 'diagnosis_label_doctor', 'diagnosis_label_zhu',
+                  'making_way', 'scan_time', 'quality')
+
+
+class DupImageSerializer(serializers.ModelSerializer):
+    """查询重复记录"""
     dup_count = serializers.CharField(read_only=True)
 
     class Meta:
