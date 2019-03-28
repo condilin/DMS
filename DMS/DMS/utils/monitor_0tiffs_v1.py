@@ -55,7 +55,7 @@ class EvenHandle(pyinotify.ProcessEvent):
             # 同时根据文件名和存储路径, 可以查询出唯一的一张大图, 查询该大图在数据库中的id
             # 注意：in_move_to此时获取到的名字是已重命名之后的, 因此通过此文件名去数据库中查询id是查不到的
             # 需要通过旧文件名和旧的存储路径才能查询到
-            query_url = 'http://%s/api/v1/images/?file_name=%s&storage_path=%s' % (
+            query_url = 'http://%s/api/v1/images/exact/?file_name=%s&storage_path=%s' % (
                 self.host, kwargs['old_file_name'], kwargs['old_storage_path']
             )
         # 查询病例中对应的病理号在数据库中是否存在
