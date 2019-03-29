@@ -80,7 +80,7 @@ class UploadModelInfoFile(APIView):
 
             try:
                 # 删除表中没有逻辑删除的记录,那些已逻辑删除的要保存记录下来
-                Train.objects.filter(is_delete=False).delete()
+                # Train.objects.filter(is_delete=False).delete()
 
                 # 将数据写入mysql的数据库，但需要先通过sqlalchemy.create_engine建立连接,且字符编码设置为utf8，否则有些latin字符不能处理
                 con = create_engine(UPLOAD_DB_ENGINE)
@@ -156,7 +156,7 @@ class UploadTrainedImageFile(APIView):
 
             try:
                 # 删除表中没有逻辑删除的记录,那些已逻辑删除的要保存记录下来
-                TrainedImage.objects.filter(is_delete=False).delete()
+                # TrainedImage.objects.filter(is_delete=False).delete()
 
                 # 将数据写入mysql的数据库，但需要先通过sqlalchemy.create_engine建立连接,且字符编码设置为utf8，否则有些latin字符不能处理
                 con = create_engine(UPLOAD_DB_ENGINE)
