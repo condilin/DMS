@@ -393,7 +393,7 @@ class SImageView(ListCreateAPIView):
     # 默认指定按哪个字段进行排序
     ordering_fields = ('pathology', )
     # 指定可以被搜索字段
-    filter_class = ExactImageFilter
+    filter_class = ImageFilter
 
 
 class SelectExactImageView(ListAPIView):
@@ -414,7 +414,7 @@ class SelectExactImageView(ListAPIView):
     # 默认指定按哪个字段进行排序
     ordering_fields = ('pathology', )
     # 指定可以被搜索字段
-    filter_class = ImageFilter
+    filter_class = ExactImageFilter
 
 
 class SDoctorZhuDiagnoseView(APIView):
