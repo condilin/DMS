@@ -105,7 +105,7 @@ class UploadFile(APIView):
             # 注意这里要使用文件名, 而不能使用病理号, 因此有病理号为TC17001535, 而文件名可能为:TC17001535,TC17001535_1等
             image = Image.objects.filter(is_delete=False, file_name=row['pathology'])
             # ------- 更新大图信息中的朱博士诊断 -------- #
-            # 如何筛选出来有多条大图记录, 则所有都更新在一样的
+            # 如果筛选出来有多条大图记录, 则所有都更新在一样的
             if image:
                 image.update(diagnosis_label_zhu=row['his_diagnosis_label'])
                 # image1 = image[0]
