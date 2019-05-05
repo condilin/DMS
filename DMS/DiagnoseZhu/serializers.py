@@ -35,9 +35,9 @@ class CDiagnoseSerializer(serializers.ModelSerializer):
         diagnose = super().create(validated_data)
 
         # ------- 更新大图信息中的朱博士诊断 -------- #
-        image = Image.objects.filter(is_delete=False, file_name=diagnose.pathology)
+        image = Image.objects.filter(is_delete=False, pathology=diagnose.pathology)
         if image:
-            # 如何筛选出来有多条大图记录, 则全部更新为一样的
+            # 如果筛选出来有多条大图记录, 则全部更新为一样的
             image.update(diagnosis_label_zhu=diagnose.his_diagnosis_label)
 
         # ------- 查询DiagnoseZhu中的数据，经处理后，保存在DiagnoseZhuTmp表中 ------- #
