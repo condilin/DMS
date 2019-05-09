@@ -41,3 +41,13 @@ class DupImageSerializer(serializers.ModelSerializer):
     #     if not image:
     #         instance = image.objects.create(**validated_data)
     #         return instance
+
+
+class SearchDupCaseSerializer(serializers.ModelSerializer):
+    """查"""
+    dup_count = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = Image
+        # 序列化返回只有两个字段
+        fields = ('file_name', 'dup_count')

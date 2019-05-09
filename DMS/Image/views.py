@@ -16,7 +16,7 @@ from djqscsv import render_to_csv_response
 from DMS.settings.dev import DATA_SAMBA_IMAGE_LOCATE, DATA_SAMBA_PREX, TRASH_FILE_PATH
 
 from Image.models import Image
-from Image.serializers import ImageSerializer, DupImageSerializer
+from Image.serializers import ImageSerializer, DupImageSerializer, SearchDupCaseSerializer
 from Case.models import Case
 from DiagnoseZhu.models import DiagnoseZhu
 from Train.models import TrainedImage
@@ -120,6 +120,25 @@ class StatisticView(APIView):
         return Response(status=status.HTTP_200_OK, data=result_dict)
 
 
+class ImageFilter(FilterSet):
+    """搜索类"""
+
+    id = CharFilter(lookup_expr='iexact')  # 精确查询
+    pathology = CharFilter(lookup_expr='icontains')  # 模糊查询（包含），并且忽略大小写
+    file_name = CharFilter(lookup_expr='icontains')  # 模糊查询（包含），并且忽略大小写
+    resolution = CharFilter(lookup_expr='iexact')  # 精确查询
+    storage_path = CharFilter(lookup_expr='iexact')  # 精确查询
+    waveplate_source = CharFilter(lookup_expr='icontains')  # 模糊查询（包含），并且忽略大小写
+    diagnosis_label_doctor = CharFilter(lookup_expr='icontains')  # 模糊查询（包含），并且忽略大小写
+    diagnosis_label_zhu = CharFilter(lookup_expr='icontains')  # 模糊查询（包含），并且忽略大小写
+    is_learn = CharFilter(lookup_expr='iexact')  # 精确查询
+
+    class Meta:
+        model = Image
+        fields = ['id', 'pathology', 'file_name', 'resolution', 'storage_path', 'waveplate_source',
+                  'diagnosis_label_doctor', 'diagnosis_label_zhu', 'is_learn']
+
+
 class FindDuplicateFileName(APIView):
     """查找大图中出现重复的文件名"""
 
@@ -142,6 +161,28 @@ class FindDuplicateFileName(APIView):
         # return Response(status=status.HTTP_200_OK, data=serializer.data)
         # 使用get_paginated_response, 则含上一页和下一页
         return pg.get_paginated_response(data=serializer.data)
+
+
+class SearchDuplicateFileName(ListAPIView):
+    """
+    get: 搜索病例中出现重复的病理号
+    """
+
+    # 指定查询集, 获取病理号出现的次数大于1的记录
+    queryset = Image.objects.filter(is_delete=False).values('file_name', 'resolution').annotate(
+        dup_count=Count('id')).filter(dup_count__gt=1).order_by('-dup_count')
+
+    # 指定序列化器
+    serializer_class = SearchDupCaseSerializer
+
+    # OrderingFilter：指定排序的过滤器,可以按任意字段排序,通过在路由中通过ordering参数控制,如：?ordering=id
+    # DjangoFilterBackend对应filter_fields属性，做相等查询
+    # SearchFilter对应search_fields，对应模糊查询
+    filter_backends = [OrderingFilter, DjangoFilterBackend, SearchFilter]
+    # 默认指定按哪个字段进行排序
+    ordering_fields = ('file_name',)
+    # 指定可以被搜索字段
+    filter_class = ImageFilter
 
 
 class DownloadFile(APIView):
@@ -343,23 +384,7 @@ class UpdateDataBase(APIView):
             return Response(status=status.HTTP_201_CREATED, data={'msg': '数据库更新成功！', 'cost_time': cost_time})
 
 
-class ImageFilter(FilterSet):
-    """搜索类"""
 
-    id = CharFilter(lookup_expr='iexact')  # 精确查询
-    pathology = CharFilter(lookup_expr='icontains')  # 模糊查询（包含），并且忽略大小写
-    file_name = CharFilter(lookup_expr='icontains')  # 模糊查询（包含），并且忽略大小写
-    resolution = CharFilter(lookup_expr='iexact')  # 精确查询
-    storage_path = CharFilter(lookup_expr='iexact')  # 精确查询
-    waveplate_source = CharFilter(lookup_expr='icontains')  # 模糊查询（包含），并且忽略大小写
-    diagnosis_label_doctor = CharFilter(lookup_expr='icontains')  # 模糊查询（包含），并且忽略大小写
-    diagnosis_label_zhu = CharFilter(lookup_expr='icontains')  # 模糊查询（包含），并且忽略大小写
-    is_learn = CharFilter(lookup_expr='iexact')  # 精确查询
-
-    class Meta:
-        model = Image
-        fields = ['id', 'pathology', 'file_name', 'resolution', 'storage_path', 'waveplate_source',
-                  'diagnosis_label_doctor', 'diagnosis_label_zhu', 'is_learn']
 
 
 class ExactImageFilter(FilterSet):

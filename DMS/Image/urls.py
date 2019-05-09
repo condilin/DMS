@@ -9,7 +9,10 @@ from . import views
 
 urlpatterns = [
     url(r'^images/statistics/$', views.StatisticView.as_view()),  # 数据统计
+
     url(r'^images/duplicates/$', views.FindDuplicateFileName.as_view()),  # 查找重复的文件名以及重复的次数
+    url(r'^images/duplicates/search/$', views.SearchDuplicateFileName.as_view()),  # 搜索重复的文件名
+
     url(r'^images/downloads/$', views.DownloadFile.as_view()),  # 文件下载
     url(r'^images/updates/quality/$', views.UUpdateQuality.as_view()),  # 更新大图质量字段
     # url(r'^images/updates/$', views.UpdateDataBase.as_view()),  # 更新数据库
