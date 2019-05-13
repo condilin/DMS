@@ -144,7 +144,7 @@ class FindDuplicateFileName(APIView):
 
     def get(self, request):
         # 查询（文件名和倍数）分组，查找出现的次数大于1的记录
-        dup_file_name = Image.objects.filter(is_delete=False).values('file_name', 'resolution').annotate(
+        dup_file_name = Image.objects.filter(is_delete=False).values('file_name', 'resolution', 'suffix').annotate(
             dup_count=Count('id')).filter(dup_count__gt=1).order_by('-dup_count')
 
         # 创建分页对象
@@ -169,7 +169,7 @@ class SearchDuplicateFileName(ListAPIView):
     """
 
     # 指定查询集, 获取病理号出现的次数大于1的记录
-    queryset = Image.objects.filter(is_delete=False).values('file_name', 'resolution').annotate(
+    queryset = Image.objects.filter(is_delete=False).values('file_name', 'resolution', 'suffix').annotate(
         dup_count=Count('id')).filter(dup_count__gt=1).order_by('-dup_count')
 
     # 指定序列化器
