@@ -131,6 +131,7 @@ class ImageFilter(FilterSet):
     waveplate_source = CharFilter(lookup_expr='icontains')  # 模糊查询（包含），并且忽略大小写
     diagnosis_label_doctor = CharFilter(lookup_expr='icontains')  # 模糊查询（包含），并且忽略大小写
     diagnosis_label_zhu = CharFilter(lookup_expr='icontains')  # 模糊查询（包含），并且忽略大小写
+    suffix = CharFilter(lookup_expr='icontains')  # 模糊查询（包含），并且忽略大小写
     is_learn = CharFilter(lookup_expr='iexact')  # 精确查询
 
     class Meta:
