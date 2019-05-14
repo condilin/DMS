@@ -50,4 +50,4 @@ class SearchDupCaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
         # 序列化返回只有两个字段
-        fields = ('file_name', 'dup_count')
+        fields = ('file_name', 'resolution', 'suffix', 'dup_count')
