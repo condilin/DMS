@@ -4,7 +4,7 @@ import os, sys
 import requests
 import logging
 from io import BytesIO
-from sanic import Sanic, response
+# from sanic import Sanic, response
 # from sanic_cors import CORS
 from japronto import Application
 from Aslide.aslide import Aslide
@@ -49,7 +49,7 @@ def get_path(image_id, request):
 
             image_info = response.json()['results'][0]
             tif_path = TIF_PATH_PREX + os.path.join(image_info['storage_path'], image_info['file_name']) + image_info['suffix']
-            tif_path_cache[image_info['file_name']] = tif_path
+            tif_path_cache[image_id] = tif_path
         return tif_path
     except Exception as e:
         logging.error('获取路径出错：%s' % e)
