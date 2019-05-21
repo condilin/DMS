@@ -385,9 +385,6 @@ class UpdateDataBase(APIView):
             return Response(status=status.HTTP_201_CREATED, data={'msg': '数据库更新成功！', 'cost_time': cost_time})
 
 
-
-
-
 class ExactImageFilter(FilterSet):
     """搜索类"""
 

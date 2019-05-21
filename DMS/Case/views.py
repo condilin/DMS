@@ -71,7 +71,7 @@ class UploadFile(APIView):
             data['is_delete'] = False
             data['create_time'] = time.strftime("%Y-%m-%d %H:%M:%S")
             data['update_time'] = time.strftime("%Y-%m-%d %H:%M:%S")
-            data['diagnosis_label_doctor_filter'] = data.diagnosis_label_doctor.str.extract(r'(\w+)')
+            # data['diagnosis_label_doctor_filter'] = data.diagnosis_label_doctor.str.extract(r'(\w+)')
         except Exception as e:
             logger.error(e)
             return Response(status=status.HTTP_400_BAD_REQUEST,
