@@ -74,7 +74,11 @@ class KfbSlide(AbstractSlide):
 
         size:     the maximum size of the thumbnail."""
 
-        thumb = self.associated_images[b'thumbnail']
+        thumb = self.associated_images['thumbnail']
+        
+        if size:
+            thumb = thumb.resize(size, Image.ANTIALIAS)
+
         return thumb
 
 
