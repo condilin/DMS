@@ -60,17 +60,22 @@ class UploadFile(APIView):
         # ---------- 删除上传文件数据 ---------- #
         os.remove(upload_file_rename)
 
-        # 自定义列名
-        # 重新定义表中字段的列名, 因为插入数据库时，时按表中的字段对应一一插入到数据库中的，因此列名要与数据库中保持一致
-        column_name = ['pathology', 'diagnosis_label_doctor', 'waveplate_source', 'making_way', 'check_date',
-                       'diagnosis_date', 'last_menstruation', 'clinical_observed']
-        data.columns = column_name
+        try:
+            # 自定义列名
+            # 重新定义表中字段的列名, 因为插入数据库时，时按表中的字段对应一一插入到数据库中的，因此列名要与数据库中保持一致
+            column_name = ['pathology', 'diagnosis_label_doctor', 'waveplate_source', 'making_way', 'check_date',
+                           'diagnosis_date', 'last_menstruation', 'clinical_observed']
+            data.columns = column_name
 
-        # 保存到数据库前, 手动添加is_delete列与时间列, 以及对诊断标签进行处理
-        data['is_delete'] = False
-        data['create_time'] = time.strftime("%Y-%m-%d %H:%M:%S")
-        data['update_time'] = time.strftime("%Y-%m-%d %H:%M:%S")
-        data['diagnosis_label_doctor_filter'] = data.diagnosis_label_doctor.str.extract(r'(\w+)')
+            # 保存到数据库前, 手动添加is_delete列与时间列, 以及对诊断标签进行处理
+            data['is_delete'] = False
+            data['create_time'] = time.strftime("%Y-%m-%d %H:%M:%S")
+            data['update_time'] = time.strftime("%Y-%m-%d %H:%M:%S")
+            data['diagnosis_label_doctor_filter'] = data.diagnosis_label_doctor.str.extract(r'(\w+)')
+        except Exception as e:
+            logger.error(e)
+            return Response(status=status.HTTP_400_BAD_REQUEST,
+                            data={"msg": '上传数据的字段必须和病例信息页面中的字段一一对应！'})
 
         # ----------- 保存结果到数据库 ----------- #
         # 开启事务
