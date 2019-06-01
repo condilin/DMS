@@ -48,6 +48,7 @@ class StatisticView(APIView):
 
         # 初始化列表, 用于存储所有的诊断结果, 优先朱博士诊断
         diagnosis_label_list = []
+
         for diag in all_diagnosis_label:
             if diag.diagnosis_label_zhu:
                 # 数据清洗
@@ -55,8 +56,10 @@ class StatisticView(APIView):
                 # 2.去除两边的空格 3.统一转换成大写 4.AGC1/AGC2统一为AGC,因此要统一将数字去掉
                 diagnosis_label_list.append(diag.diagnosis_label_zhu.split('+')[0].strip().upper().strip('123'))
             else:
-                diagnosis_label_list.append(diag.diagnosis_label_doctor.split('+')[0].strip().upper().strip('123'))
-
+                try:
+                    diagnosis_label_list.append(diag.diagnosis_label_doctor.split('+')[0].strip().upper().strip('123'))
+                except Exception as e:
+                    logger.error('image statistic page error: %s' % e)
         # 统计每个分类的个数
         diag_label_dict = dict(Counter(diagnosis_label_list))
         diag_label_count_list = []
