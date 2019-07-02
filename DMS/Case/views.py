@@ -19,6 +19,7 @@ from DMS.settings.dev import UPLOAD_DB_ENGINE
 import django_excel as excel
 from djqscsv import render_to_csv_response
 from DMS.utils.uploads import save_upload_file
+from DMS.utils.utils import async_call
 
 from Case.models import Case
 from Case.serializers import CaseSerializer, SearchDupCaseSerializer
@@ -33,50 +34,9 @@ class UploadFile(APIView):
     post: 上传csv/excel格式的数据
     """
 
-    def post(self, request):
-
-        # 获取上传的文件, 'file'值是前端页面input框的name属性的值
-        _file = request.FILES.get('file', None)
-        # 如果获取不到内容, 则说明上传失败
-        if not _file:
-            return Response(status=status.HTTP_400_BAD_REQUEST, data={"msg": '文件上传失败！'})
-
-        # ---------- 保存上传文件 ---------- #
-
-        # 获取文件的后缀名, 判断上传文件是否符合格式要求
-        suffix_name = os.path.splitext(_file.name)[1]
-        if suffix_name not in ['.csv', '.xls', '.xlsx']:
-            return Response(status=status.HTTP_400_BAD_REQUEST, data={"msg": '请上传csv或excel格式的文件！'})
-
-        upload_file_rename = save_upload_file(_file)
-        # ---------- 读取上传文件数据 ---------- #
-        # excel格式
-        if suffix_name in ['.xls', '.xlsx']:
-            data = pd.read_excel(upload_file_rename)
-        # csv格式
-        else:
-            data = pd.read_csv(upload_file_rename)
-
-        # ---------- 删除上传文件数据 ---------- #
-        os.remove(upload_file_rename)
-
-        try:
-            # 自定义列名
-            # 重新定义表中字段的列名, 因为插入数据库时，时按表中的字段对应一一插入到数据库中的，因此列名要与数据库中保持一致
-            column_name = ['pathology', 'diagnosis_label_doctor', 'waveplate_source', 'making_way', 'check_date',
-                           'diagnosis_date', 'last_menstruation', 'clinical_observed']
-            data.columns = column_name
-
-            # 保存到数据库前, 手动添加is_delete列与时间列, 以及对诊断标签进行处理
-            data['is_delete'] = False
-            data['create_time'] = time.strftime("%Y-%m-%d %H:%M:%S")
-            data['update_time'] = time.strftime("%Y-%m-%d %H:%M:%S")
-            # data['diagnosis_label_doctor_filter'] = data.diagnosis_label_doctor.str.extract(r'(\w+)')
-        except Exception as e:
-            logger.error(e)
-            return Response(status=status.HTTP_400_BAD_REQUEST,
-                            data={"msg": '上传数据的字段必须和病例信息页面中的字段一一对应！'})
-
+    @staticmethod
+    @async_call
+    def save_to_db(data):
         # ----------- 保存结果到数据库 ----------- #
         # 开启事务
         with transaction.atomic():
@@ -124,6 +84,53 @@ class UploadFile(APIView):
                     diagnosis_label_doctor=row['diagnosis_label_doctor'],
                     making_way=None if np.isnan(row['making_way']) else row['making_way']
                 )
+
+    def post(self, request):
+
+        # 获取上传的文件, 'file'值是前端页面input框的name属性的值
+        _file = request.FILES.get('file', None)
+        # 如果获取不到内容, 则说明上传失败
+        if not _file:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"msg": '文件上传失败！'})
+
+        # ---------- 保存上传文件 ---------- #
+
+        # 获取文件的后缀名, 判断上传文件是否符合格式要求
+        suffix_name = os.path.splitext(_file.name)[1]
+        if suffix_name not in ['.csv', '.xls', '.xlsx']:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"msg": '请上传csv或excel格式的文件！'})
+
+        upload_file_rename = save_upload_file(_file)
+        # ---------- 读取上传文件数据 ---------- #
+        # excel格式
+        if suffix_name in ['.xls', '.xlsx']:
+            data = pd.read_excel(upload_file_rename)
+        # csv格式
+        else:
+            data = pd.read_csv(upload_file_rename)
+
+        # ---------- 删除上传文件数据 ---------- #
+        os.remove(upload_file_rename)
+
+        try:
+            # 自定义列名
+            # 重新定义表中字段的列名, 因为插入数据库时，时按表中的字段对应一一插入到数据库中的，因此列名要与数据库中保持一致
+            column_name = ['pathology', 'diagnosis_label_doctor', 'waveplate_source', 'making_way', 'check_date',
+                           'diagnosis_date', 'last_menstruation', 'clinical_observed']
+            data.columns = column_name
+
+            # 保存到数据库前, 手动添加is_delete列与时间列, 以及对诊断标签进行处理
+            data['is_delete'] = False
+            data['create_time'] = time.strftime("%Y-%m-%d %H:%M:%S")
+            data['update_time'] = time.strftime("%Y-%m-%d %H:%M:%S")
+            # data['diagnosis_label_doctor_filter'] = data.diagnosis_label_doctor.str.extract(r'(\w+)')
+        except Exception as e:
+            logger.error(e)
+            return Response(status=status.HTTP_400_BAD_REQUEST,
+                            data={"msg": '上传数据的字段必须和病例信息页面中的字段一一对应！'})
+
+        # ----------- 保存结果到数据库 ----------- #
+        self.save_to_db(data)
 
         return Response(status=status.HTTP_201_CREATED, data={"msg": '上传成功！'})
 
