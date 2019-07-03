@@ -32,7 +32,7 @@ class BaseInfoViews(Resource):
         limit_params = int(request.args['limit'])
         offset_params = int(request.args['offset'])
 
-        base_info_list = mongo_algo.db.algo_info.find({}, {'base_info': 1}).limit(limit_params).skip(offset_params)
+        base_info_list = mongo_algo.db.algo_info.find({}).limit(limit_params).skip(offset_params)
         results = []
         for record in base_info_list:
             record['_id'] = str(record['_id'])
@@ -152,6 +152,24 @@ class BaseInfoDeleteViews(Resource):
             return {'msg': 'id is not exist !'}, 400
 
         return {'msg': 'successful to detele !'}, 200
+
+
+class BaseInfoSearchViews(Resource):
+
+    def get(self):
+
+        # verification
+        search_text = request.args.get('text', None)
+        if not search_text:
+            return {'msg': 'params error !'}, 400
+
+        # search
+        search_list = mongo_algo.db.algo_info.find({'base_info.version_name': {'$regex': search_text}})
+        results = []
+        for record in search_list:
+            record['_id'] = str(record['_id'])
+            results.append(record)
+        return {'results': results}, 200
 
 
 class DataSectionViews(Resource):

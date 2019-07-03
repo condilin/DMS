@@ -26,6 +26,7 @@ app = create_app('development')
 api = Api(app)
 api.add_resource(algo_views.BaseInfoViews, '/api/v1/base_info')  # read/create/modify/delete with base info
 api.add_resource(algo_views.BaseInfoDeleteViews, '/api/v1/base_info/delete')  # delete one or more base info
+api.add_resource(algo_views.BaseInfoSearchViews, '/api/v1/base_info/search')  # search from base info
 api.add_resource(algo_views.DataSectionViews, '/api/v1/data_section')  # read/create/modify with data section
 api.add_resource(algo_views.ModelSectionViews, '/api/v1/model_section')  # read/create/modify with model section
 api.add_resource(algo_views.HyperParamsViews, '/api/v1/hyper_params')  # read/create/modify with hyper params
@@ -38,17 +39,13 @@ if __name__ == '__main__':
     # 开始日志
     ConfigLog()
 
-    app.run(host='0.0.0.0', port=5999)
+    app.run(host='0.0.0.0', port=5998)
 
-    # # 指定端口号
-    # port = sys.argv[1]
-    # try:
-    #     port = int(port)
-    # except:
-    #     raise Exception("PORT %s IS NOT ACCEPTED!" % port)
-    #
-    # # sanic配置：access_log=False 不记录成功的日志, error_log=True, 记录失败的日志
-    # # app.run(host="0.0.0.0", port=port, access_log=False, error_log=True)
-    #
-    # # japronto配置
-    # app.run(host="0.0.0.0", port=port)
+    # 指定端口号
+    port = sys.argv[1]
+    try:
+        port = int(port)
+    except:
+        raise Exception("PORT %s IS NOT ACCEPTED!" % port)
+
+    app.run(host="0.0.0.0", port=port, debug=False)

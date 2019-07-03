@@ -62,7 +62,7 @@ class BaseInfoPostForm(Form):
     )
     functional = StringField(
         validators=[
-            Optional(),
+            DataRequired(message='字段不能为空'),
             Length(max=100, message='长度不能超过%(max)s个字符')
         ]
     )
@@ -83,12 +83,12 @@ class DataSectionPostForm(Form):
 
     id = StringField(
         validators=[
-            DataRequired(message='字段不能为空')
+            Optional(),
         ]
     )
     classify_num = StringField(
         validators=[
-            DataRequired(message='字段不能为空'),
+            Optional(),
             Length(max=4, min=1, message='长度必须在%(min)s～%(max)s之间')
         ]
     )
@@ -132,7 +132,7 @@ class ModelSectionPostForm(Form):
 
     model = StringField(
         validators=[
-            DataRequired(message='字段不能为空'),
+            Optional(),
             Length(max=32, min=1, message='长度必须在%(min)s～%(max)s之间')
         ]
     )
@@ -151,31 +151,31 @@ class HyperParamsPostForm(Form):
 
     optimizer = StringField(
         validators=[
-            DataRequired(message='字段不能为空'),
+            Optional(),
             Length(max=16, min=1, message='长度必须在%(min)s～%(max)s之间')
         ]
     )
     batch_size = StringField(
         validators=[
-            DataRequired(message='字段不能为空'),
+            Optional(),
             Length(max=8, min=1, message='长度必须在%(min)s～%(max)s之间')
         ]
     )
     total_epochs = StringField(
         validators=[
-            DataRequired(message='字段不能为空'),
+            Optional(),
             Length(max=8, min=1, message='长度必须在%(min)s～%(max)s之间')
         ]
     )
     dense_block_and_transition_layers = StringField(
         validators=[
-            DataRequired(message='字段不能为空'),
+            Optional(),
             Length(max=16, min=1, message='长度必须在%(min)s～%(max)s之间')
         ]
     )
     learning_rate = StringField(
         validators=[
-            DataRequired(message='字段不能为空'),
+            Optional(),
             Length(max=8, min=1, message='长度必须在%(min)s～%(max)s之间')
         ]
     )
@@ -207,25 +207,25 @@ class AlgoPerformancePostForm(Form):
 
     best_epoch = StringField(
         validators=[
-            DataRequired(message='字段不能为空'),
+            Optional(),
             Length(max=8, min=1, message='长度必须在%(min)s～%(max)s之间')
         ]
     )
     train_loss = StringField(
         validators=[
-            DataRequired(message='字段不能为空'),
+            Optional(),
             Length(max=8, min=1, message='长度必须在%(min)s～%(max)s之间')
         ]
     )
     test_loss = StringField(
         validators=[
-            DataRequired(message='字段不能为空'),
+            Optional(),
             Length(max=8, min=1, message='长度必须在%(min)s～%(max)s之间')
         ]
     )
     test_accuracy = StringField(
         validators=[
-            DataRequired(message='字段不能为空'),
+            Optional(),
             Length(max=8, min=1, message='长度必须在%(min)s～%(max)s之间')
         ]
     )
