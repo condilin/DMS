@@ -13,14 +13,15 @@
 
 import sys
 from flask_restful import Api
-
+from flask_cors import CORS
 
 from AlgoVersion import create_app, ConfigLog
 import AlgoVersion.views as algo_views
 
 # generate app
-app = create_app('development')
-# app = create_app('product')
+# app = create_app('development')
+app = create_app('product')
+CORS(app, supports_credentials=True)
 
 # api
 api = Api(app)
@@ -39,7 +40,7 @@ if __name__ == '__main__':
     # 开始日志
     ConfigLog()
 
-    app.run(host='0.0.0.0', port=5998)
+    # app.run(host='0.0.0.0', port=5998)
 
     # 指定端口号
     port = sys.argv[1]
@@ -48,4 +49,4 @@ if __name__ == '__main__':
     except:
         raise Exception("PORT %s IS NOT ACCEPTED!" % port)
 
-    app.run(host="0.0.0.0", port=port, debug=False)
+    app.run(host="0.0.0.0", port=port)

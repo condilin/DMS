@@ -66,6 +66,12 @@ class BaseInfoPostForm(Form):
             Length(max=100, message='长度不能超过%(max)s个字符')
         ]
     )
+    gitlab_link = StringField(
+        validators=[
+            Optional(),
+            Length(max=50, message='长度不能超过%(max)s个字符')
+        ]
+    )
     remark = StringField(
         validators=[
             Optional(),
