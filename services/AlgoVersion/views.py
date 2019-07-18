@@ -8,6 +8,7 @@ import bson
 import time
 import logging
 from flask import request
+from flask_pymongo import DESCENDING
 
 from flask_restful import Resource
 from .validation import BaseInfoPostForm, BaseInfoPaginateForm, DataSectionPostForm, \
@@ -32,7 +33,8 @@ class BaseInfoViews(Resource):
         limit_params = int(request.args['limit'])
         offset_params = int(request.args['offset'])
 
-        base_info_list = mongo_algo.db.algo_info.find({}).limit(limit_params).skip(offset_params)
+        base_info_list = mongo_algo.db.algo_info.find({}).limit(
+            limit_params).skip(offset_params).sort('create_time', DESCENDING)
         results = []
         for record in base_info_list:
             record['_id'] = str(record['_id'])
