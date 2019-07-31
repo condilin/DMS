@@ -1,6 +1,8 @@
 ### 框架
 后端框架：django、sanic、flask
+
 数据库：mysql、mongodb
+
 web服务器：nginx+uwsgi
 
 ### 首页展示
