@@ -1,3 +1,8 @@
+### 框架
+后端框架：django、sanic、flask
+数据库：mysql、mongodb
+web服务器：nginx+uwsgi
+
 ### 首页展示
 1. 大图总数
 2. 大图中诊断结果标签数量及占比
